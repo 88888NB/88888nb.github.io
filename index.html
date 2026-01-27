@@ -1,0 +1,632 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>XQVIP团队</title>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+<style>
+/* 基础重置与变量定义 */
+* {margin: 0;padding: 0;box-sizing: border-box;}
+:root {
+--primary: #ff4e50;
+--secondary: #f9d423;
+--accent: #a8ff78;
+--accent2: #78ffd6;
+--dark: #0a0a14;
+--light: #f0f0ff;
+--gradient-1: linear-gradient(135deg, #ff4e50, #f9d423, #a8ff78, #78ffd6);
+--gradient-2: linear-gradient(135deg, #667eea, #764ba2, #f093fb);
+--glow: 0 0 40px currentColor;
+--transition: all 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+body {
+font-family: 'Segoe UI', 'Microsoft YaHei', sans-serif;
+background: var(--dark);
+color: var(--light);
+overflow-x: hidden;
+line-height: 1.7;
+}
+/* WebGL画布容器 */
+#webgl-canvas {
+position: fixed;
+top: 0;
+left: 0;
+width: 100%;
+height: 100%;
+z-index: -3;
+}
+/* 流体背景层 */
+.fluid-layer {
+position: fixed;
+top: 0;
+left: 0;
+width: 100%;
+height: 100%;
+z-index: -2;
+background:
+radial-gradient(circle at 20% 80%, rgba(255, 78, 80, 0.2) 0%, transparent 50%),
+radial-gradient(circle at 80% 20%, rgba(249, 212, 35, 0.2) 0%, transparent 50%),
+radial-gradient(circle at 40% 40%, rgba(168, 255, 120, 0.15) 0%, transparent 50%);
+animation: fluidPulse 20s ease-in-out infinite alternate;
+}
+/* 动态网格背景 */
+.grid-background {
+position: fixed;
+top: 0;
+left: 0;
+width: 200%;
+height: 200%;
+background-image:
+linear-gradient(rgba(255, 255, 255, 0.05) 1px, transparent 1px),
+linear-gradient(90deg, rgba(255, 255, 255, 0.05) 1px, transparent 1px);
+background-size: 50px 50px;
+z-index: -1;
+animation: gridMove 30s linear infinite;
+transform: perspective(500px) rotateX(60deg);
+}
+/* 浮动粒子 */
+.floating-particles {
+position: fixed;
+top: 0;
+left: 0;
+width: 100%;
+height: 100%;
+pointer-events: none;
+z-index: -1;
+}
+.particle {
+position: absolute;
+width: 8px;
+height: 8px;
+border-radius: 50%;
+background: var(--gradient-1);
+filter: blur(2px);
+animation: particleFloat 20s infinite linear;
+}
+/* 英雄区域 */
+.hero {
+min-height: 100vh;
+display: flex;
+flex-direction: column;
+align-items: center;
+justify-content: center;
+padding: 0 5%;
+position: relative;
+overflow: hidden;
+}
+.hero::before {
+content: '';
+position: absolute;
+top: 50%;
+left: 50%;
+transform: translate(-50%, -50%);
+width: 600px;
+height: 600px;
+background: radial-gradient(circle, rgba(255, 78, 80, 0.3) 0%, transparent 70%);
+filter: blur(100px);
+z-index: -1;
+animation: pulseGlow 4s ease-in-out infinite alternate;
+}
+.hero-title {
+font-size: 5.5rem;
+font-weight: 900;
+background: var(--gradient-1);
+-webkit-background-clip: text;
+background-clip: text;
+color: transparent;
+margin-bottom: 4rem;
+text-align: center;
+text-shadow: 0 0 40px currentColor;
+}
+.cta-buttons {
+display: flex;
+flex-direction: column;
+gap: 2rem;
+align-items: center;
+}
+.btn {
+padding: 1.3rem 3.5rem;
+border-radius: 50px;
+font-size: 1.2rem;
+font-weight: 700;
+text-decoration: none;
+display: inline-flex;
+align-items: center;
+gap: 1rem;
+transition: var(--transition);
+position: relative;
+overflow: hidden;
+z-index: 1;
+border: none;
+cursor: pointer;
+}
+.btn::before {
+content: '';
+position: absolute;
+top: 0;
+left: 0;
+width: 100%;
+height: 100%;
+background: inherit;
+filter: brightness(1.2);
+z-index: -1;
+transition: var(--transition);
+}
+.btn-secondary {
+background: transparent;
+color: var(--light);
+border: 2px solid rgba(255, 255, 255, 0.3);
+backdrop-filter: blur(10px);
+}
+.btn-secondary:hover {
+background: rgba(255, 255, 255, 0.1);
+border-color: var(--accent);
+transform: translateY(-8px);
+box-shadow: 0 0 40px rgba(168, 255, 120, 0.3);
+}
+/* 服务区域 */
+.services {
+padding: 8rem 5%;
+position: relative;
+}
+.services-grid {
+display: grid;
+grid-template-columns: 1fr;
+gap: 3rem;
+margin-top: 2rem;
+}
+.service-card {
+background: rgba(255, 255, 255, 0.05);
+backdrop-filter: blur(30px);
+border-radius: 30px;
+padding: 3rem;
+border: 1px solid rgba(255, 255, 255, 0.1);
+transition: var(--transition);
+position: relative;
+overflow: hidden;
+transform-style: preserve-3d;
+perspective: 1000px;
+text-align: center;
+}
+.service-card::before {
+content: '';
+position: absolute;
+top: 0;
+left: 0;
+width: 100%;
+height: 100%;
+background: var(--gradient-1);
+opacity: 0;
+transition: opacity 0.6s ease;
+z-index: -1;
+}
+.service-card:hover {
+transform: translateY(-15px) rotateX(5deg) rotateY(5deg) scale(1.02);
+border-color: transparent;
+box-shadow:
+0 20px 40px rgba(0, 0, 0, 0.3),
+0 0 100px rgba(255, 78, 80, 0.2);
+}
+.service-card:hover::before {
+opacity: 0.2;
+}
+.service-icon {
+width: 120px;
+height: 120px;
+background: var(--gradient-1);
+border-radius: 25px;
+margin: 0 auto 2rem;
+transition: var(--transition);
+transform-style: preserve-3d;
+}
+.service-card:hover .service-icon {
+transform: rotateY(180deg) scale(1.1);
+background: var(--gradient-2);
+}
+.service-link {
+color: var(--accent);
+text-decoration: none;
+font-weight: 700;
+font-size: 1.3rem;
+transition: var(--transition);
+}
+.service-link:hover {
+text-shadow: var(--glow);
+}
+/* 特别鸣谢区域 */
+.thanks {
+padding: 8rem 5% 12rem;
+position: relative;
+text-align: center;
+}
+.thanks-title {
+font-size: 3rem;
+font-weight: 800;
+background: var(--gradient-2);
+-webkit-background-clip: text;
+background-clip: text;
+color: transparent;
+margin-bottom: 6rem;
+text-shadow: 0 0 30px currentColor;
+}
+.thanks-grid {
+display: grid;
+grid-template-columns: 1fr 1fr;
+gap: 4rem;
+max-width: 800px;
+margin: 0 auto;
+}
+.thanks-column h3 {
+font-size: 1.8rem;
+color: var(--secondary);
+margin-bottom: 2.5rem;
+position: relative;
+display: inline-block;
+}
+.thanks-column h3::after {
+content: '';
+position: absolute;
+bottom: -10px;
+left: 50%;
+transform: translateX(-50%);
+width: 60px;
+height: 3px;
+background: var(--secondary);
+border-radius: 3px;
+}
+.thanks-list {
+display: flex;
+flex-direction: column;
+gap: 1.5rem;
+}
+.thanks-item {
+font-size: 1.3rem;
+color: var(--light);
+transition: var(--transition);
+padding: 0.8rem 0;
+position: relative;
+}
+.thanks-item::before {
+content: '✦';
+color: var(--accent);
+margin-right: 1rem;
+text-shadow: 0 0 10px var(--accent);
+}
+.thanks-item:hover {
+color: var(--accent2);
+transform: translateX(10px);
+text-shadow: 0 0 20px var(--accent2);
+}
+/* 动画定义 */
+@keyframes fluidPulse {
+0%, 100% {
+transform: scale(1) rotate(0deg);
+filter: hue-rotate(0deg);
+}
+33% {
+transform: scale(1.1) rotate(120deg);
+filter: hue-rotate(120deg);
+}
+66% {
+transform: scale(0.9) rotate(240deg);
+filter: hue-rotate(240deg);
+}
+}
+@keyframes gridMove {
+0% {
+transform: perspective(500px) rotateX(60deg) translateY(0);
+}
+100% {
+transform: perspective(500px) rotateX(60deg) translateY(50px);
+}
+}
+@keyframes pulseGlow {
+0% {
+opacity: 0.5;
+filter: blur(100px);
+}
+100% {
+opacity: 0.8;
+filter: blur(150px);
+}
+}
+@keyframes particleFloat {
+0% {
+transform: translate(0, 0) rotate(0deg);
+opacity: 0;
+}
+10% {
+opacity: 1;
+}
+90% {
+opacity: 1;
+}
+100% {
+transform: translate(calc(100vw * var(--tx)), calc(100vh * var(--ty))) rotate(360deg);
+opacity: 0;
+}
+}
+/* 响应式设计 */
+@media (max-width: 768px) {
+.hero-title {
+font-size: 3.5rem;
+}
+.btn {
+padding: 1rem 2.5rem;
+font-size: 1.1rem;
+}
+.service-card {
+padding: 2rem;
+}
+.service-icon {
+width: 100px;
+height: 100px;
+}
+.thanks-title {
+font-size: 2.5rem;
+margin-bottom: 4rem;
+}
+.thanks-grid {
+grid-template-columns: 1fr;
+gap: 3rem;
+}
+.thanks-column h3 {
+font-size: 1.6rem;
+}
+.thanks-item {
+font-size: 1.2rem;
+}
+}
+</style>
+</head>
+<body>
+<!-- WebGL画布 -->
+<canvas id="webgl-canvas"></canvas>
+<!-- 流体背景层 -->
+<div class="fluid-layer"></div>
+<!-- 动态网格背景 -->
+<div class="grid-background"></div>
+<!-- 浮动粒子 -->
+<div class="floating-particles" id="floatingParticles"></div>
+
+<!-- 英雄区域 -->
+<section class="hero">
+<h1 class="hero-title">XQVIP团队</h1>
+<div class="cta-buttons">
+<a href="https://www.123865.com/s/HzNlVv-yjQQh" target="_blank" class="btn btn-secondary">XQVIP网盘</a>
+<a href="https://pd.qq.com/s/6bl8cqaey?b=9" target="_blank" class="btn btn-secondary">XQ社区</a>
+<a href="https://ds.xiaoman.top/links/30D2E30A" target="_blank" class="btn btn-secondary">卡密购买</a>
+<a href="https://qun.qq.com/universal-share/share?ac=1&authKey=3D09P2t9%2F%2FWGOX22FRGqYMVu0ulV0iuuUFhn4hLRMQDVNt2epJCYpPz1cfX2AZXp&busi_data=eyJncm91cENvZGUiOiI2MjQ3ODA2NTgiLCJ0b2tlbiI6Ii9VZnZYSGRxMTZqekZEWEp2RlZYT1lhdC9OdmFmNnJPY3MvYjNKWFB5QjlKNkhxREprZUQ1YW8zdTlZM0hjYWoiLCJ1aW4iOiIxNzQzNjI4MjcxIn0%3D&data=n-jD8Ky8fgaQ60uyyNiuI4Y6Zpbxrya5D2d4zpdkH8WLyIa1beBBj2A0f1Yab_m7tuwZMBseCLXqIvoZp27QBg&svctype=4&tempid=h5_group_info" target="_blank" class="btn btn-secondary">总群加入</a>
+</div>
+</section>
+
+<!-- 服务区域 -->
+<section class="services">
+<div class="services-grid">
+<div class="service-card">
+<div class="service-icon"></div>
+<a href="#" class="service-link">探索流体艺术</a>
+</div>
+<div class="service-card">
+<div class="service-icon"></div>
+<a href="#" class="service-link">探索粒子世界</a>
+</div>
+<div class="service-card">
+<div class="service-icon"></div>
+<a href="#" class="service-link">探索沉浸体验</a>
+</div>
+</div>
+</section>
+
+<!-- 特别鸣谢区域 -->
+<section class="thanks">
+<h2 class="thanks-title">特别鸣谢</h2>
+<div class="thanks-grid">
+<div class="thanks-column">
+<h3>核心开发者</h3>
+<div class="thanks-list">
+<div class="thanks-item">XQ</div>
+<div class="thanks-item">狂徒</div>
+<div class="thanks-item">放烟花</div>
+</div>
+</div>
+<div class="thanks-column">
+<h3>代理</h3>
+<div class="thanks-list">
+<div class="thanks-item">红烧鱼</div>
+<div class="thanks-item">前任</div>
+<div class="thanks-item">黑</div>
+</div>
+</div>
+</div>
+</section>
+
+<script>
+// 页面加载完成后执行
+document.addEventListener('DOMContentLoaded', function() {
+const floatingParticles = document.getElementById('floatingParticles');
+
+// 创建浮动粒子
+function createFloatingParticles() {
+const particleCount = 50;
+for (let i = 0; i < particleCount; i++) {
+const particle = document.createElement('div');
+particle.classList.add('particle');
+// 随机属性
+const size = Math.random() * 10 + 5;
+const posX = Math.random() * 100;
+const posY = Math.random() * 100;
+const delay = Math.random() * 20;
+const duration = Math.random() * 30 + 20;
+const tx = Math.random() * 2 - 1;
+const ty = Math.random() * 2 - 1;
+// 应用样式
+particle.style.width = `${size}px`;
+particle.style.height = `${size}px`;
+particle.style.left = `${posX}vw`;
+particle.style.top = `${posY}vh`;
+particle.style.animationDelay = `${delay}s`;
+particle.style.animationDuration = `${duration}s`;
+particle.style.setProperty('--tx', tx);
+particle.style.setProperty('--ty', ty);
+// 随机渐变背景
+const gradients = [
+'linear-gradient(135deg, #ff4e50, #f9d423)',
+'linear-gradient(135deg, #a8ff78, #78ffd6)',
+'linear-gradient(135deg, #667eea, #764ba2)',
+'linear-gradient(135deg, #4facfe, #00f2fe)'
+];
+particle.style.background = gradients[Math.floor(Math.random() * gradients.length)];
+floatingParticles.appendChild(particle);
+}
+}
+
+// 鼠标移动效果
+document.addEventListener('mousemove', (e) => {
+const x = (e.clientX / window.innerWidth - 0.5) * 20;
+const y = (e.clientY / window.innerHeight - 0.5) * 20;
+// 背景层视差
+const fluidLayer = document.querySelector('.fluid-layer');
+if (fluidLayer) {
+fluidLayer.style.transform = `translate(${x}px, ${y}px)`;
+}
+// 卡片轻微倾斜
+const cards = document.querySelectorAll('.service-card');
+cards.forEach(card => {
+const rect = card.getBoundingClientRect();
+const cardX = e.clientX - rect.left;
+const cardY = e.clientY - rect.top;
+const rotateY = (cardX / rect.width - 0.5) * 10;
+const rotateX = (0.5 - cardY / rect.height) * 10;
+card.style.transform = `perspective(1000px) rotateX(${rotateX}deg) rotateY(${rotateY}deg)`;
+});
+// 鸣谢列表轻微位移
+const thanksItems = document.querySelectorAll('.thanks-item');
+thanksItems.forEach((item, index) => {
+const offsetX = (e.clientX / window.innerWidth - 0.5) * 5;
+const offsetY = (e.clientY / window.innerHeight - 0.5) * 5;
+item.style.transform = `translate(${offsetX}px, ${offsetY}px)`;
+});
+});
+
+// 鼠标移出时重置元素
+document.addEventListener('mouseleave', () => {
+const cards = document.querySelectorAll('.service-card');
+cards.forEach(card => {
+card.style.transform = 'perspective(1000px) rotateX(0) rotateY(0)';
+});
+const thanksItems = document.querySelectorAll('.thanks-item');
+thanksItems.forEach(item => {
+item.style.transform = 'translate(0, 0)';
+});
+});
+
+// 简单的WebGL背景
+function initWebGL() {
+const canvas = document.getElementById('webgl-canvas');
+const gl = canvas.getContext('webgl') || canvas.getContext('experimental-webgl');
+if (!gl) {
+console.log('WebGL not supported, falling back on experimental-webgl');
+return;
+}
+// 设置画布尺寸
+function resizeCanvas() {
+canvas.width = window.innerWidth;
+canvas.height = window.innerHeight;
+gl.viewport(0, 0, canvas.width, canvas.height);
+}
+window.addEventListener('resize', resizeCanvas);
+resizeCanvas();
+// 顶点着色器
+const vertexShaderSource = `
+attribute vec2 a_position;
+void main() {
+gl_Position = vec4(a_position, 0.0, 1.0);
+gl_PointSize = 2.0;
+}
+`;
+// 片段着色器
+const fragmentShaderSource = `
+precision mediump float;
+uniform float u_time;
+void main() {
+vec2 uv = gl_PointCoord;
+float d = length(uv - vec2(0.5));
+float alpha = 1.0 - smoothstep(0.4, 0.5, d);
+vec3 color = vec3(
+0.5 + 0.5 * sin(u_time + uv.x * 3.0),
+0.5 + 0.5 * sin(u_time + uv.y * 3.0 + 1.0),
+0.5 + 0.5 * sin(u_time + uv.x * uv.y + 2.0)
+);
+gl_FragColor = vec4(color, alpha * 0.1);
+}
+`;
+// 创建着色器程序
+function createShader(gl, type, source) {
+const shader = gl.createShader(type);
+gl.shaderSource(shader, source);
+gl.compileShader(shader);
+if (!gl.getShaderParameter(shader, gl.COMPILE_STATUS)) {
+console.error('Shader compile error:', gl.getShaderInfoLog(shader));
+gl.deleteShader(shader);
+return null;
+}
+return shader;
+}
+const vertexShader = createShader(gl, gl.VERTEX_SHADER, vertexShaderSource);
+const fragmentShader = createShader(gl, gl.FRAGMENT_SHADER, fragmentShaderSource);
+const program = gl.createProgram();
+gl.attachShader(program, vertexShader);
+gl.attachShader(program, fragmentShader);
+gl.linkProgram(program);
+if (!gl.getProgramParameter(program, gl.LINK_STATUS)) {
+console.error('Program link error:', gl.getProgramInfoLog(program));
+return;
+}
+gl.useProgram(program);
+// 创建粒子位置
+const particleCount = 1000;
+const positions = new Float32Array(particleCount * 2);
+for (let i = 0; i < particleCount * 2; i += 2) {
+positions[i] = Math.random() * 2 - 1;     // x: -1 to 1
+positions[i + 1] = Math.random() * 2 - 1; // y: -1 to 1
+}
+const positionBuffer = gl.createBuffer();
+gl.bindBuffer(gl.ARRAY_BUFFER, positionBuffer);
+gl.bufferData(gl.ARRAY_BUFFER, positions, gl.STATIC_DRAW);
+const positionAttributeLocation = gl.getAttribLocation(program, 'a_position');
+gl.enableVertexAttribArray(positionAttributeLocation);
+gl.vertexAttribPointer(positionAttributeLocation, 2, gl.FLOAT, false, 0, 0);
+const timeUniformLocation = gl.getUniformLocation(program, 'u_time');
+// 动画循环
+let time = 0;
+function animate() {
+time += 0.01;
+// 更新粒子位置
+for (let i = 0; i < particleCount * 2; i += 2) {
+positions[i] += Math.sin(time + positions[i + 1]) * 0.001;
+positions[i + 1] += Math.cos(time + positions[i]) * 0.001;
+// 边界处理
+if (positions[i] > 1) positions[i] = -1;
+if (positions[i] < -1) positions[i] = 1;
+if (positions[i + 1] > 1) positions[i + 1] = -1;
+if (positions[i + 1] < -1) positions[i + 1] = 1;
+}
+gl.bindBuffer(gl.ARRAY_BUFFER, positionBuffer);
+gl.bufferData(gl.ARRAY_BUFFER, positions, gl.DYNAMIC_DRAW);
+gl.uniform1f(timeUniformLocation, time);
+gl.clear(gl.COLOR_BUFFER_BIT);
+gl.drawArrays(gl.POINTS, 0, particleCount);
+requestAnimationFrame(animate);
+}
+animate();
+}
+
+// 初始化
+createFloatingParticles();
+initWebGL();
+});
+</script>
+</body>
+</html>
