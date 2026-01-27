@@ -19,6 +19,8 @@
 --gradient-2: linear-gradient(135deg, #667eea, #764ba2, #f093fb);
 --glow: 0 0 40px currentColor;
 --transition: all 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+/* 统一反转背面图片链接 */
+--back-image: url('https://1813813973.v.123pan.cn/1813813973/37579730');
 }
 body {
 font-family: 'Segoe UI', 'Microsoft YaHei', sans-serif;
@@ -153,6 +155,7 @@ filter: brightness(1.2);
 z-index: -1;
 transition: var(--transition);
 }
+/* 保留半透明按钮样式 */
 .btn-secondary {
 background: transparent;
 color: var(--light);
@@ -219,10 +222,36 @@ border-radius: 25px;
 margin: 0 auto 2rem;
 transition: var(--transition);
 transform-style: preserve-3d;
+background-size: contain;
+background-position: center;
+background-repeat: no-repeat;
+cursor: pointer;
 }
-.service-card:hover .service-icon {
+/* 关键：所有卡片图标统一添加反转背面样式 */
+.service-icon-custom {
+position: relative;
+backface-visibility: hidden;
+}
+.service-icon-custom::after {
+content: '';
+position: absolute;
+top: 0;
+left: 0;
+width: 100%;
+height: 100%;
+border-radius: 25px;
+/* 统一反转背面图片 + 渐变兜底 */
+background-image: var(--back-image), var(--gradient-2);
+background-size: contain;
+background-position: center;
+background-repeat: no-repeat;
+transform: rotateY(180deg);
+backface-visibility: hidden;
+}
+/* 所有卡片hover时统一反转效果 */
+.service-card:hover .service-icon-custom {
 transform: rotateY(180deg) scale(1.1);
-background: var(--gradient-2);
+background: var(--gradient-1);
 }
 .service-link {
 color: var(--accent);
@@ -404,17 +433,25 @@ font-size: 1.2rem;
 <!-- 服务区域 -->
 <section class="services">
 <div class="services-grid">
+<!-- 第1张卡片 -->
 <div class="service-card">
-<div class="service-icon"></div>
-<a href="#" class="service-link">探索流体艺术</a>
+<div class="service-icon service-icon-custom" style="background-image: url('https://1813813973.v.123pan.cn/1813813973/37583091'), var(--gradient-1);" onclick="window.open('https://1813813973.v.123pan.cn/1813813973/41122933', '_blank')"></div>
+<a href="#" class="service-link">XQVIP Ultra下载</a>
 </div>
+<!-- 第2张卡片 -->
 <div class="service-card">
-<div class="service-icon"></div>
-<a href="#" class="service-link">探索粒子世界</a>
+<div class="service-icon service-icon-custom" style="background-image: url('https://1813813973.v.123pan.cn/1813813973/41799551'), var(--gradient-1);" onclick="window.open('https://1813813973.v.123pan.cn/1813813973/41467979', '_blank')"></div>
+<a href="#" class="service-link">XQVIP专属框架下载</a>
 </div>
+<!-- 第3张卡片 -->
 <div class="service-card">
-<div class="service-icon"></div>
-<a href="#" class="service-link">探索沉浸体验</a>
+<div class="service-icon service-icon-custom" style="background-image: url('https://1813813973.v.123pan.cn/1813813973/41799555'), var(--gradient-1);" onclick="window.open('https://1813813973.v.123pan.cn/1813813973/40969404', '_blank')"></div>
+<a href="#" class="service-link">专属诅咒游戏安装包</a>
+</div>
+<!-- 第4张卡片 -->
+<div class="service-card">
+<div class="service-icon service-icon-custom" style="background-image: url('https://1813813973.v.123pan.cn/1813813973/37579730'), var(--gradient-1);" onclick="window.open('https://1813813973.v.123pan.cn/1813813973/40993614', '_blank')"></div>
+<a href="#" class="service-link">XQVIP官网下载</a>
 </div>
 </div>
 </section>
