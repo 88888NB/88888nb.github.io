@@ -2970,15 +2970,17 @@
                 </div>
             `;
             
-            // 加载商品（使用setTimeout确保DOM已渲染）
+            // 加载商品
+            // 设置分类筛选值
+            const categoryFilter = document.getElementById('categoryFilter');
+            if (categoryFilter) {
+                categoryFilter.value = category;
+            }
+            
+            // 延迟加载商品，确保DOM已渲染
             setTimeout(() => {
-                // 设置分类筛选值
-                const categoryFilter = document.getElementById('categoryFilter');
-                if (categoryFilter) {
-                    categoryFilter.value = category;
-                }
                 loadShopProducts();
-            }, 0);
+            }, 100);
         }
 
         // 商店内搜索
@@ -3635,14 +3637,6 @@
             UI.success('语言已切换');
         }
 
-        // 刷新验证码
-        function refreshCaptcha(imgId) {
-            const img = document.getElementById(imgId);
-            if (img) {
-                img.src = CONFIG.API_BASE + '/auth/captcha.php?' + Date.now();
-            }
-        }
-        
         // 获取设备指纹
         function getDeviceFingerprint() {
             const nav = window.navigator;
@@ -3673,15 +3667,6 @@
                     <div class="form-group">
                         <label class="form-label">密码</label>
                         <input type="password" class="form-input" id="loginPassword" placeholder="请输入密码">
-                    </div>
-                    <div class="form-group">
-                        <label class="form-label">验证码</label>
-                        <div class="d-flex gap-12">
-                            <input type="text" class="form-input" id="loginCaptcha" placeholder="请输入验证码" style="flex: 1;">
-                            <img id="loginCaptchaImg" src="${CONFIG.API_BASE}/auth/captcha.php" 
-                                 style="height: 44px; border-radius: 8px; cursor: pointer;" 
-                                 onclick="refreshCaptcha('loginCaptchaImg')" title="点击刷新">
-                        </div>
                     </div>
                 </div>
                 <div class="modal-footer">
@@ -3716,15 +3701,6 @@
                         <input type="password" class="form-input" id="regPassword2" placeholder="请再次输入密码">
                     </div>
                     <div class="form-group">
-                        <label class="form-label">验证码 *</label>
-                        <div class="d-flex gap-12">
-                            <input type="text" class="form-input" id="regCaptcha" placeholder="请输入验证码" style="flex: 1;">
-                            <img id="regCaptchaImg" src="${CONFIG.API_BASE}/auth/captcha.php" 
-                                 style="height: 44px; border-radius: 8px; cursor: pointer;" 
-                                 onclick="refreshCaptcha('regCaptchaImg')" title="点击刷新">
-                        </div>
-                    </div>
-                    <div class="form-group">
                         <label class="form-label">邀请码(选填)</label>
                         <input type="text" class="form-input" id="regInviteCode" placeholder="有邀请码请输入">
                     </div>
@@ -3743,7 +3719,6 @@
             const password = document.getElementById('regPassword').value;
             const password2 = document.getElementById('regPassword2').value;
             const inviteCode = document.getElementById('regInviteCode').value.trim();
-            const captcha = document.getElementById('regCaptcha').value.trim();
             
             if (!username || !password) {
                 UI.error('请填写用户名和密码');
@@ -3765,11 +3740,6 @@
                 return;
             }
             
-            if (!captcha) {
-                UI.error('请输入验证码');
-                return;
-            }
-            
             try {
                 const response = await fetch(CONFIG.API_BASE + '/auth/register.php', {
                     method: 'POST',
@@ -3779,7 +3749,6 @@
                     body: JSON.stringify({ 
                         username, 
                         password,
-                        captcha: captcha.toUpperCase(),
                         device_fingerprint: getDeviceFingerprint(),
                         invite_code: inviteCode || undefined
                     })
@@ -3792,7 +3761,6 @@
                     showLoginModal();
                 } else {
                     UI.error(result.message || '注册失败');
-                    refreshCaptcha('regCaptchaImg');
                 }
             } catch (error) {
                 UI.error('注册失败：' + error.message);
@@ -3803,15 +3771,9 @@
         async function doLogin() {
             const username = document.getElementById('loginUsername').value;
             const password = document.getElementById('loginPassword').value;
-            const captcha = document.getElementById('loginCaptcha').value.trim();
             
             if (!username || !password) {
                 UI.error('请输入用户名和密码');
-                return;
-            }
-            
-            if (!captcha) {
-                UI.error('请输入验证码');
                 return;
             }
             
@@ -3824,7 +3786,6 @@
                     body: JSON.stringify({ 
                         username, 
                         password,
-                        captcha: captcha.toUpperCase(),
                         device_fingerprint: getDeviceFingerprint()
                     })
                 });
@@ -3845,7 +3806,6 @@
                     renderProfile();
                 } else {
                     UI.error(result.message || '登录失败');
-                    refreshCaptcha('loginCaptchaImg');
                 }
             } catch (error) {
                 UI.error('登录失败：' + error.message);
